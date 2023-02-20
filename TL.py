@@ -1117,71 +1117,34 @@ else:
     remain_gerp=remain_gerp.drop(A,axis=0)
     remain_gerp.reset_index(inplace=True, drop=True)
 
-
-### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
-#남은 것 다시 매칭--> door glass => gerp_parent 값이 두개인 경우
-match_list.index=match_list['gerp_parent'] # gerp_parent를 인덱스로 두고 포인팅 값이 표기
+### 매칭 안된 데이터 - friction damper and sheetgi
+match_list.index=match_list['index'] # gerp_parent를 인덱스로 두고 포인팅 값이 표기
 remain_match=pd.DataFrame()
 count=0
 for i in range(len(remain_gerp)): #i -> gerp
     remain_des=remain_gerp.at[i,"Description"]
-    remain_parent=remain_gerp.at[i,"Parent Item"]
     remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=='Door,Glass':
-        for k in range(len(gerp)):
-            gerp_parent=gerp.at[k,"Parent Item"]
-            gerp_des=gerp.at[k,"Description"]
-            gerp_seq=gerp.at[k,"Seq"]
-            if gerp_parent==remain_parent and gerp_des=='Door,Glass':
-                match_list.at[k,"gerp_re"]=remain_seq
-
-                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
-                remain_match.at[count,"index"]=i #remain_gerp list index
-                count=count+1
-        else:
-            pass
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    match_list.reset_index(inplace=True, drop=True)
-    remain_gerp.reset_index(inplace=True, drop=True)
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-    match_list.reset_index(inplace=True, drop=True)
-
-### Remain gerp : Label,Barcode -> FL
-remain_match=pd.DataFrame()
-match_list.index=match_list["index"]
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=str(remain_gerp.at[i,"Description"])
-    remain_part=remain_gerp.at[i,"Child Item"][:-2]
-    remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=="Label,Barcode":
-        for j in range(len(gerp)):
-            npt_part=str(npt.at[j,"Part No"])[:-2]
-            npt_seq=npt.at[j,"Seq."]
+    if remain_des=='Damper Assembly,Friction' or 'Sheet,Steel(GI)':
+        for j in range(len(npt)):
             npt_des=npt.at[j,"Desc."]
-            if npt_part==remain_part and npt_des==remain_des:
+            npt_seq=npt.at[j,"Seq."]
+            if npt_des==remain_des: 
                 match_list.at[npt_seq,"gerp_sub"]=remain_seq
-                match_list.at[npt_seq,"index"]=npt_seq
-                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
-                remain_match.at[count,"index"]=i #remain_gerp list index
+                remain_match.at[count,"index"]=i
                 count=count+1
 
 #remain_match 존재 유무
 remain_match_count=len(remain_match)
 if remain_match_count==0:
+    match_list.reset_index(inplace=True, drop=True)
     remain_gerp.reset_index(inplace=True, drop=True)
 else:
     #matching 된 행은 제거 & 재정렬
     A=remain_match["index"].tolist()
     remain_gerp=remain_gerp.drop(A,axis=0)
     remain_gerp.reset_index(inplace=True, drop=True)
-
+    match_list.reset_index(inplace=True, drop=True)
+    
 
 #매칭 안되고 missing 된것
 remain_gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/TL/remaingerp.xlsx')
@@ -2027,65 +1990,6 @@ final_table = final_table.astype(cast_to_type) # round error -> datatype
 final_table["price match"]=final_table["price match"].round(8)
 
 
-#### price calculate exception 1 -> FL
-## 자신의  parent와 다른 child 매칭 
-#Coil, Steel(STS) / Sheet,Steel(GI) (자신의 부모가 Cover, Rear)
-for i in range(len(final_table)):
-    parent_part=final_table.at[i,"Parent Part"] #gerp
-    part_des=final_table.at[i,"Desc."] #npt
-    if part_des=='Coil,Steel(STS)':
-        for j in range(len(final_table)):
-            another_child=final_table.at[j,"Child Item"]
-            another_qty=final_table.at[j,"Qty Per Assembly"]
-            if another_child==parent_part: # 한개 짜리 문제 될수도 있음
-                final_table.at[i,"price match"]=(final_table.at[i,"Net Material"]-final_table.at[i,"Unit Price (USD)"])*final_table.at[i,"Qty Per Assembly"]*another_qty
-    elif part_des=='Sheet,Steel(GI)':
-        for j in range(len(final_table)):
-            another_child=final_table.at[j,"Child Item"]
-            another_des=final_table.at[j,"Desc."]
-            another_qty=final_table.at[j,"Qty Per Assembly"]
-            if another_child==parent_part and another_des=='Cover,Rear': # add one more condition
-                    final_table.at[i,"price match"]=(final_table.at[i,"Net Material"]-final_table.at[i,"Unit Price (USD)"])*final_table.at[i,"Qty Per Assembly"]*another_qty
-    else:
-        pass
-
-
-#파트넘버 같은지 아닌지 확인해서 substitute => drum part 1개만 있을 때 소팅하지 못함으로
-for i in range(len(final_table)):
-    part_no=final_table.at[i,"Part No"]
-    part_des=final_table.at[i,"Desc."]
-    child_item=final_table.at[i,"Child Item"]
-    if part_des.__contains__('Tub,Drum(') or part_des=='Cover,Rear':
-        if part_des!=child_item:
-            final_table.at[i,"match"]="Substitute"
-
-#### price calculate exception 2 -> FL
-## 자신의 child 다른 parent 매칭 but substitute part
-#Tub,Drum(Front), Tub,Drum(Center), Tub,Drum(Rear)
-for i in range(len(final_table)):
-    child_part=str(final_table.at[i,"Child Item"])[:-2]  #gerp
-    part_des=final_table.at[i,"Desc."] #npt
-    part_match=final_table.at[i,"match"]
-    if part_des.__contains__('Tub,Drum(') and part_match.__contains__('Substitute'):
-        for j in range(len(final_table)):
-            another_parent=final_table.at[j,"Parent Part"][:-2]#npt
-            another_qty=final_table.at[j,"Qty Per Assembly"]
-            another_price=final_table.at[j,"Material Cost (LOC)"]
-            another_des=final_table.at[j,"Desc."]
-            another_match=final_table.at[j,"match"]
-            if another_des=='Coil,Steel(STS)' and another_parent==child_part and another_match.__contains__("Substitute")==False:
-                final_table.at[i,"price match"]=(final_table.at[i,"Net Material"]-another_price)*final_table.at[i,"Qty Per Assembly"]
-    elif part_des.__contains__('Cover,Rear') and part_match.__contains__('Substitute'):
-        for j in range(len(final_table)):
-            another_parent=final_table.at[j,"Parent Part"][:-2]
-            another_qty=final_table.at[j,"Qty Per Assembly"]
-            another_price=final_table.at[j,"Material Cost (LOC)"]
-            another_des=final_table.at[j,"Desc."]
-            another_match=final_table.at[j,"match"]
-            if another_des=='Sheet,Steel(GI)' and another_parent==child_part and another_match.__contains__("Substitute")==False:
-                final_table.at[i,"price match"]=(final_table.at[i,"Net Material"]-another_price)*final_table.at[i,"Qty Per Assembly"]
-    else:
-        pass
 
 #price change -> True 
 for i in range(len(final_table)):
