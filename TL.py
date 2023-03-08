@@ -1251,7 +1251,7 @@ cast_to_type = {'price match': float} # round error -> datatype
 final_table = final_table.astype(cast_to_type) # round error -> datatype
 final_table["price match"]=final_table["price match"].round(8)
 
-
+######### start from here 3/9
 ######################## Match Type : Price Change / True/ Substitute ########################
 #price change -> True 
 for i in range(len(final_table)):
