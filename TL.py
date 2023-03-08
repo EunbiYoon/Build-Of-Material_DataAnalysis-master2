@@ -911,6 +911,9 @@ for i in range(len(remain_gerp)): #i -> gerp
             pcm_sub=str(match_list.at[match_number,"gerp_sub"])
             pcm_re=str(match_list.at[match_number,"gerp_re"])
             pcm_exc=str(match_list.at[match_number,"gerp_exc"])
+            print("PCNM")
+            print(pcm_count)
+            print("")
             if pcm_count==1:
                 pcm_count=match_number+0.1
                 match_list.at[match_number,"gerp_sub"]=remain_seq
@@ -1083,7 +1086,7 @@ for i in range(len(match_list)):
         change_count=change_count+1
 
     ############### sub, parent ###############
-    elif match_digit==110000:
+    elif match_digit==10010:
         #price
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerp_parent"]=match_list.at[i,'gerp_parent']
