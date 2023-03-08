@@ -827,7 +827,6 @@ else:
 ############################ NPT Sequence -> Index #########################
 match_list.index=match_list['index']
 
-############### coil,sheet(sts) ###############
 remain_match=pd.DataFrame()
 count=0
 for i in range(len(remain_gerp)): #i -> gerp
