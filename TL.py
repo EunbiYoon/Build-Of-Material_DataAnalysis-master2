@@ -827,7 +827,8 @@ else:
 
 ############################ 1) NPT Sequence -> Parent #########################
 ############ handle assembly => gerp_parent 값이 두개인 경우 ############
-match_list.index=match_list['gerp_parent'] # gerp에서 부모가 같은 경우, Handle를 포함
+match_list.index=match_list['gerp_parent']
+
 remain_match=pd.DataFrame()
 count=0
 for i in range(len(remain_gerp)): #i -> gerp
@@ -903,25 +904,21 @@ for i in range(len(remain_gerp)): #i -> gerp
         ############## 'Sheet,Steel(PCM)' ###############
         elif remain_des=='Sheet,Steel(PCM)' and npt_subpart==remain_subpart: 
             pcm_count=pcm_count+1
-            print(pcm_count)
             if pcm_count==1:
                 pcm_match=match_number+pcm_count*0.1
                 match_list.at[match_number,"gerp_sub"]=remain_seq
                 remain_match.at[pcm_match,"index"]=i
-                print('Sheet,Steel(PCM)')
-                print(remain_match)
+
             elif pcm_count==2:
                 pcm_match=match_number+pcm_count*0.1
                 match_list.at[match_number,"gerp_re"]=remain_seq
                 remain_match.at[pcm_match,"index"]=i
-                print('Sheet,Steel(PCM)')
-                print(remain_match)
+
             elif pcm_count==3:
                 pcm_match=match_number+pcm_count*0.1
                 match_list.at[match_number,"gerp_exc"]=remain_seq
                 remain_match.at[pcm_match,"index"]=i
-                print('Sheet,Steel(PCM)')
-                print(remain_match)
+  
             else:
                 pass
         
@@ -944,12 +941,10 @@ for i in range(len(remain_gerp)): #i -> gerp
     
 
         ############## Damper Assembly,Friction ###############
-        elif remain_des=='Damper Assembly,Friction' and npt_des==remain_des:
+        elif remain_des=='Damper Assembly,Friction' and npt_des==remain_des and match_number==539:
             #remian_gerp_duplicate-bug
-            match_number=539
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print(match_list)
     
         ############## PASS ###############
         else:
@@ -961,6 +956,12 @@ remain_match_count=len(remain_match)
 if remain_match_count==0:
     pass
 else:
+    #between re-matching, it could be the new matching not added,
+    match_list["Seq."]=match_list.index
+    match_list.reset_index(drop=True, inplace=True)
+    match_list=match_list.drop(["index"],axis=1)
+    match_list['count']=match_list.count(axis = 1)-1
+
     #matching 된 행은 제거 & 재정렬
     A=remain_match["index"].tolist()
     # duplicate matching check
@@ -977,15 +978,9 @@ else:
     remain_gerp.reset_index(inplace=True, drop=True)
 
 
-#매칭 안되고 missing 된것
+############### remain gerp 매칭 안되고 missing 된것
 remain_gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/remaingerp.xlsx')
 
-#gerp_re할때 순서 바꾼 것 다시 원상 복귀, 매칭 리스트 파일 위해 인덱스 재정렬
-match_list.reset_index(inplace=True, drop=True)
-
-#matchlist에서 count만들기
-match_list['count']=match_list.count(axis = 1)-1
-match_list=match_list.rename(columns = {'index':'Seq.'})
 
 ####################################### match_list "match_digit" #######################################
 # add match_digit column 
@@ -997,17 +992,17 @@ for i in range(len(sub_matchlist)):
 # add one more column
 for i in range(len(match_list)):
     exist_column=match_list.iloc[i].to_list()
-    if str(exist_column[1])!="nan":
+    if str(exist_column[0])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+100000
-    if str(exist_column[2])!="nan":
+    if str(exist_column[1])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+10000
-    if str(exist_column[3])!="nan":
+    if str(exist_column[2])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+1000
-    if str(exist_column[4])!="nan":
+    if str(exist_column[3])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+100
-    if str(exist_column[5])!="nan":
+    if str(exist_column[4])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+10
-    if str(exist_column[6])!="nan":
+    if str(exist_column[5])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+1
 
 match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/matchlist.xlsx')
@@ -1120,11 +1115,13 @@ for i in range(len(match_list)):
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
         change_count=change_count+1
         #exc
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
         change_count=change_count+1
 
     ############### parent, re, sub, exc ###############
@@ -1152,21 +1149,23 @@ for i in range(len(match_list)):
     
     else:
         print("[ERROR] match digit another login found - check index: "+str(i)+" columns")
-    
+
+
+# match=False -> count=0 matching
+match_join = pd.merge(npt['Seq.'], sub_matchlist, on ='Seq.', how ='left')    
+
 #save file
-sub_matchlist['count']=sub_matchlist.count(axis=1)-2
-sub_matchlist.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/submatchlist.xlsx')
+match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/matchjoin.xlsx')
 
 
 ######################################### final table
+#final table
 final_table=pd.DataFrame()
 match_column=pd.DataFrame()
-for i in range(len(sub_matchlist)):
-    #substitute part npt delete
-    npt_seq=sub_matchlist.at[i,"Seq."]
-    gerp_seq=sub_matchlist.at[i,"gerpSeq."]
 
-    #NPT
+for i in range(len(match_join)):
+    ######################################### NPT #########################################
+    npt_seq=match_join.at[i,"Seq."]
     #sequence 일치 칼럼을 뽑아내고
     npt_column=npt[npt["Seq."]==npt_seq]
     npt_column.reset_index(inplace=True, drop=True) #index 넘버 상관 X하고 0으로 
@@ -1191,11 +1190,13 @@ for i in range(len(sub_matchlist)):
     final_table.at[i,"price match"]=''
     final_table.at[i,"gerp start"]=''
 
+    ######################################### GERP #########################################
     #GERP Matching
-    match_count=sub_matchlist.at[i,"count"]
-    match_sub=sub_matchlist.at[i,"gerp_sub"]
-    #GERP ==> Not Match
-    if match_count==0: #empty dataframe -> count0
+    gerp_seq=match_join.at[i,"gerpSeq."]
+    gerp_seq_exist=str(gerp_seq)
+    match_sub=match_join.at[i,"gerp_sub"]
+    #######################GERP Match False####################
+    if gerp_seq_exist=='nan': #empty dataframe -> count0
         final_table.at[i,"Seq"]=''
         final_table.at[i,"Level"]=''
         final_table.at[i,"Parent Item"]=''
@@ -1209,11 +1210,12 @@ for i in range(len(sub_matchlist)):
         final_table.at[i,'match']="False"
         #나중에 채울 price match
         final_table.at[i,"price match"]=''
-    #GERP ==> Match
+    #######################GERP Match True,PriceChange,Substitute####################
     else:
-        #fill dataframe -> count1
+        #gerp information extract
         gerp_column=gerp[gerp["Seq"]==gerp_seq]
         gerp_column.reset_index(inplace=True, drop=True) #index 넘버 상관 X하고 0으로 
+        
         final_table.at[i,"Seq"]=gerp_seq
         final_table.at[i,"Level"]=int(str(gerp_column.at[0,"Level"])[-1:])
         final_table.at[i,"Parent Item"]=gerp_column.at[0,"Parent Item"]
@@ -1223,52 +1225,10 @@ for i in range(len(sub_matchlist)):
         final_table.at[i,"Qty Per Assembly"]=gerp_column.at[0,"Qty Per Assembly"]
         final_table.at[i,"Material Cost"]=gerp_column.at[0,"Material Cost"]
         final_table.at[i,"QPA*Material Cost"]=gerp_column.at[0,"QPA*Material Cost"]
-
-        #match_column
-        match_column=list(sub_matchlist.iloc[i].dropna(axis=0).drop(['Seq.','count','gerpSeq.']).index)
-        #price comparison
-        price_diff=round(final_table.at[i,"Material Cost (LOC)"]-final_table.at[i,"QPA*Material Cost"],8)
-        if match_column==['gerp_true']: #sorting column 이 True 이면
-                final_table.at[i,"match"]="True"
-        elif match_column==['gerp_price']:
-            if price_diff!=0:
-                final_table.at[i,"match"]="False price"
-            elif price_diff=='nan':
-                final_table.at[i,"match"]="False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-        
-        elif match_column==['gerp_sub']: # exc, sub =>  같게 match에 표시
-            if price_diff!=0:
-                final_table.at[i,"match"]="Substitute False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-        
-        elif match_column==['gerp_parent']:
-            if price_diff!=0:
-                final_table.at[i,"match"]="False parent price"
-            else:
-                final_table.at[i,"match"]="False parent"
-
-        elif match_column==['gerp_exc']: # exc, sub =>  같게 match에 표시
-            if price_diff!=0:
-                final_table.at[i,"match"]="Substitute False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-
-        elif match_column==['gerp_re']:
-            if price_diff!=0:
-                final_table.at[i,"match"]="Substitute False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-
-        else:
-            print("no logic error")
-        #나중에 채울 price match
+        final_table.at[i,"match"]="True"
         final_table.at[i,"price match"]=''
 
-
-#MTL column
+#######################Add MTL Column####################
 mtl=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/gerp.xlsx',sheet_name='MTL Cost')
 mtl=mtl[['Item No','Item Cost','Material Overhead Cost','Creation Period']]
 #mtl 부분 데이터 정리
@@ -1291,7 +1251,6 @@ final_table = final_table.astype(cast_to_type) # round error -> datatype
 final_table["price match"]=final_table["price match"].round(8)
 
 
-
 #price change -> True 
 for i in range(len(final_table)):
     price_match=round(final_table.at[i,'price match'],2)
@@ -1310,6 +1269,15 @@ for i in range(len(final_table)):
     elif final_match.__contains__('price'):
         final_table.at[i,"match"]="Price Change"
                     
+# Wihtin True, Price Change, part number not matching -> substitute 
+for i in range(len(final_table)):
+    final_match=str(final_table.at[i,"match"])
+    npt_part=str(final_table.at[i,"Part No"])
+    gerp_part=str(final_table.at[i,"Child Item"])
+    if gerp_part!='':
+        if npt_part!=gerp_part:
+            final_table.at[i,"match"]="Substitute"
+
 #price table -> final result
 final_table['final result']=''
 final_table.at[0,'Price Change']=0
@@ -1333,7 +1301,6 @@ for i in range(len(final_table)):
 final_table['Price Change']=round(final_table['Price Change'],2)
 final_table['Substitute Price Change']=round(final_table['Substitute Price Change'],2)
 
-diff_final=final_table
 #NPT에서 중복되는 항 제거 첫째항만 남기기 (일치와 substitute 경우)
 for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
     npt_seq1=final_table.at[i,"Seq."]
