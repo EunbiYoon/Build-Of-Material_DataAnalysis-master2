@@ -856,24 +856,24 @@ for i in range(len(remain_gerp)): #i -> gerp
         
         ############## pulsator cover ###############
         elif remain_des=='Cover,Pulsator' and remain_des==npt_des and remain_subpart==npt_subpart:
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
+            match_number=npt.at[j,"Seq."]
+            match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
+            remain_match.at[count,"index"]=i
+            count=count+1
         
         ############## rotor, stator combined ###############
         elif remain_des.__contains__('Assembly,Combined') and remain_des.__contains__(npt_des):
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
+            match_number=npt.at[j,"Seq."]
+            match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
+            remain_match.at[count,"index"]=i
+            count=count+1
 
         ############## hanger pivot ###############
         elif remain_des.__contains__(',Pivot') and remain_des==npt_des and remain_subpart==npt_subpart:
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
+            match_number=npt.at[j,"Seq."]
+            match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
+            remain_match.at[count,"index"]=i
+            count=count+1
             
 
         ############## PASS ###############
@@ -888,10 +888,6 @@ else:
     A=remain_match["index"].tolist()
     remain_gerp=remain_gerp.drop(A,axis=0)
     remain_gerp.reset_index(inplace=True, drop=True)
-
-
-
-
 
 
 #남은 것 다시 매칭--> handle assembly => gerp_parent 값이 두개인 경우
@@ -945,6 +941,7 @@ for i in range(len(remain_gerp)): #i -> gerp
             npt_des=npt.at[j,"Desc."]
             npt_seq=npt.at[j,"Seq."]
             if npt_des==remain_des: 
+                print(3)
                 match_list.at[npt_seq,"gerp_sub"]=remain_seq
                 remain_match.at[count,"index"]=i
                 count=count+1
