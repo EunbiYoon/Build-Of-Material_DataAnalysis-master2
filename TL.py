@@ -1244,6 +1244,7 @@ mtl=mtl[['mtl start','Child Item','PAC Creation','MTL Cost','Net Material','MTL 
 mtl_final=pd.merge(final_table, mtl, on='Child Item', how='left')
 final_table = mtl_final.sort_values(by=['Seq.'],ascending=True)
 
+####################### Price Match ####################
 #price match column 채우기
 final_table["price match"]=(final_table['Net Material']-final_table['Unit Price (USD)'])*final_table['Qty Per Assembly']
 cast_to_type = {'price match': float} # round error -> datatype
@@ -1251,11 +1252,13 @@ final_table = final_table.astype(cast_to_type) # round error -> datatype
 final_table["price match"]=final_table["price match"].round(8)
 
 
+######################## Match Type : Price Change / True/ Substitute ########################
 #price change -> True 
 for i in range(len(final_table)):
     price_match=round(final_table.at[i,'price match'],2)
     final_match=final_table.at[i,"match"]
-    if final_match!=False:
+    ######### True 
+    if final_match==False:
         if price_match==0 or price_match==0.00 or str(price_match)=='nan': 
             final_table.at[i,'match']=True
     else:
@@ -1278,6 +1281,8 @@ for i in range(len(final_table)):
         if npt_part!=gerp_part:
             final_table.at[i,"match"]="Substitute"
 
+
+######################## Total Price Calculation ########################
 #price table -> final result
 final_table['final result']=''
 final_table.at[0,'Price Change']=0
@@ -1301,7 +1306,7 @@ for i in range(len(final_table)):
 final_table['Price Change']=round(final_table['Price Change'],2)
 final_table['Substitute Price Change']=round(final_table['Substitute Price Change'],2)
 
-#NPT에서 중복되는 항 제거 첫째항만 남기기 (일치와 substitute 경우)
+######################## NPT Matching with several GERP -> NPT Empty ########################
 for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
     npt_seq1=final_table.at[i,"Seq."]
     npt_seq2=final_table.at[i-1,"Seq."]
