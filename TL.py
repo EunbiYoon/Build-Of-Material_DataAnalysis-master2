@@ -856,14 +856,26 @@ for i in range(len(remain_gerp)): #i -> gerp
             count=count+1
         
         ############## pulsator cover ###############
-        elif remain_des=='Cover,Pulsator':
-            if remain_des==npt_des and remain_subpart==npt_subpart:
+        elif remain_des=='Cover,Pulsator' and remain_des==npt_des and remain_subpart==npt_subpart:
                 match_number=npt.at[j,"Seq."]
                 match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
                 remain_match.at[count,"index"]=i
                 count=count+1
-            else:
-                pass
+        
+        ############## rotor, stator combined ###############
+        elif remain_des.__contains__('Assembly,Combined') and remain_des.__contains__(npt_des):
+                match_number=npt.at[j,"Seq."]
+                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
+                remain_match.at[count,"index"]=i
+                count=count+1
+
+        ############## hanger pivot ###############
+        elif remain_des.__contains__(',Pivot') and remain_des==npt_des and remain_subpart==npt_subpart:
+                match_number=npt.at[j,"Seq."]
+                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
+                remain_match.at[count,"index"]=i
+                count=count+1
+            
 
         ############## PASS ###############
         else:
@@ -880,67 +892,7 @@ else:
 
 
 
-############### 남은 것 다시 매칭--> stator, rotor combined
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    #stator, rotor combined
-    remain_des=remain_gerp.at[i,"Description"]
-    if remain_des.__contains__('Assembly,Combined'):
-        for j in range(len(npt)): #j -> npt
-            npt_des=npt.at[j,"Desc."]
-            if remain_des.__contains__(npt_des):
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-    
-    #나머지는 통과
-    else:
-        pass
 
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
-#남은 것 다시 매칭--> hanger pivot part => gerp_parent 값이 두개인 경우
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=remain_gerp.at[i,"Description"]
-    remain_part=remain_gerp.at[i,"Child Item"][:-2]
-    for j in range(len(npt)):
-        #hanger pivot -> 2 gerp_parent
-        npt_des=npt.at[j,"Desc."]
-        npt_part=str(npt.at[j,"Part No"])[:-2]
-        if remain_des.__contains__(',Pivot'):
-            if remain_des==npt_des and remain_part==npt_part:
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-        else:
-            pass
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
 
 
 #남은 것 다시 매칭--> handle assembly => gerp_parent 값이 두개인 경우
