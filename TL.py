@@ -866,7 +866,6 @@ else:
     remain_gerp.reset_index(inplace=True, drop=True)
 
 
-
 ############################ 2) NPT Sequence -> Index #########################
 match_list.reset_index(inplace=True, drop=True)
 match_list.index=match_list['index']
@@ -889,22 +888,17 @@ for i in range(len(remain_gerp)): #i -> gerp
         if remain_des=='Coil,Steel(STS)' and npt_des=='Sheet,Steel(STS)':
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('Coil,Steel(STS)')
-            print(remain_match)
 
         ############## sheet,Steel(STS) ###############
-        if remain_des=='Sheet,Steel(STS)' and npt_des.__contains__(',Steel(STS)') and npt_parent==remain_parent: 
+        elif remain_des=='Sheet,Steel(STS)' and npt_des.__contains__(',Steel(STS)') and npt_parent==remain_parent: 
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('Sheet,Steel(STS)')
-            print(remain_match)
 
         ############## 'Sheet,Steel(GI)' ###############
         elif remain_des=='Sheet,Steel(GI)' and npt_des==remain_des: 
             match_list.at[match_number,"gerp_sub"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('Sheet,Steel(GI)')
-            print(remain_match)
+
         
         ############## 'Sheet,Steel(PCM)' ###############
         elif remain_des=='Sheet,Steel(PCM)' and npt_subpart==remain_subpart: 
@@ -935,37 +929,34 @@ for i in range(len(remain_gerp)): #i -> gerp
         elif remain_des=='Cover,Pulsator' and remain_des==npt_des and remain_subpart==npt_subpart:
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('Cover,Pulsator')
-            print(remain_match)
-        
+
+
         ############## rotor, stator combined ###############
         elif remain_des.__contains__('Assembly,Combined') and remain_des.__contains__(npt_des):
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('rotor, stator combined')
-            print(remain_match)
+
 
         ############## hanger pivot ###############
         elif remain_des.__contains__(',Pivot') and remain_des==npt_des and remain_subpart==npt_subpart:
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('hanger pivot')
-            print(remain_match)        
+    
 
         ############## Damper Assembly,Friction ###############
-        # bug - duplicate error
-        elif remain_des=='Damper Assembly,Friction' and npt_des==remain_des and match_number==539:
+        elif remain_des=='Damper Assembly,Friction' and npt_des==remain_des:
+            #remian_gerp_duplicate-bug
+            match_number=539
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-            print('Damper Assembly,Friction')
-            print(remain_match)
+            print(match_list)
     
         ############## PASS ###############
         else:
             pass
 
 
-#remain_match 존재 유무
+#remain_match 존재 유무TL
 remain_match_count=len(remain_match)
 if remain_match_count==0:
     pass
@@ -976,7 +967,12 @@ else:
     if len(A)==len(pd.unique(A)):
         print("no duplicate")
     else:
-        print("duplicate-error. check remain_gerp index sorting")
+        #remian_gerp_duplicate-bug
+        remain_match.columns=["remain_gerp_seq"]
+        remain_match.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/remain_gerp_duplicate_error.xlsx')
+        print("[Error] duplicate-error. check remain_gerp index sorting")
+        print(remain_match)
+
     remain_gerp=remain_gerp.drop(A,axis=0)
     remain_gerp.reset_index(inplace=True, drop=True)
 
