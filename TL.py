@@ -1207,7 +1207,7 @@ for i in range(len(match_join)):
         final_table.at[i,"Material Cost"]=''
         final_table.at[i,"QPA*Material Cost"]=''
         #match -> not match
-        final_table.at[i,'match']="False"
+        final_table.at[i,'match']=False
         #나중에 채울 price match
         final_table.at[i,"price match"]=''
     #######################GERP Match True,PriceChange,Substitute####################
@@ -1225,7 +1225,7 @@ for i in range(len(match_join)):
         final_table.at[i,"Qty Per Assembly"]=gerp_column.at[0,"Qty Per Assembly"]
         final_table.at[i,"Material Cost"]=gerp_column.at[0,"Material Cost"]
         final_table.at[i,"QPA*Material Cost"]=gerp_column.at[0,"QPA*Material Cost"]
-        final_table.at[i,"match"]="True"
+        final_table.at[i,"match"]=True
         final_table.at[i,"price match"]=''
 
 #######################Add MTL Column####################
@@ -1255,7 +1255,7 @@ final_table["price match"]=final_table["price match"].round(8)
 for i in range(len(final_table)):
     price_match=round(final_table.at[i,'price match'],2)
     final_match=final_table.at[i,"match"]
-    if final_match!="False":
+    if final_match!=False:
         if price_match==0 or price_match==0.00 or str(price_match)=='nan': 
             final_table.at[i,'match']=True
     else:
