@@ -872,7 +872,7 @@ match_list.reset_index(inplace=True, drop=True)
 match_list.index=match_list['index']
 
 remain_match=pd.DataFrame()
-pcm_count=1
+pcm_count=0
 for i in range(len(remain_gerp)): #i -> gerp
     remain_des=remain_gerp.at[i,"Description"]
     remain_subpart=remain_gerp.at[i,"Child Item"][:-2]
@@ -908,33 +908,26 @@ for i in range(len(remain_gerp)): #i -> gerp
         
         ############## 'Sheet,Steel(PCM)' ###############
         elif remain_des=='Sheet,Steel(PCM)' and npt_subpart==remain_subpart: 
-            pcm_sub=str(match_list.at[match_number,"gerp_sub"])
-            pcm_re=str(match_list.at[match_number,"gerp_re"])
-            pcm_exc=str(match_list.at[match_number,"gerp_exc"])
-            print("PCNM")
+            pcm_count=pcm_count+1
             print(pcm_count)
-            print("")
             if pcm_count==1:
-                pcm_count=match_number+0.1
+                pcm_match=match_number+pcm_count*0.1
                 match_list.at[match_number,"gerp_sub"]=remain_seq
-                remain_match.at[pcm_count,"index"]=i
+                remain_match.at[pcm_match,"index"]=i
                 print('Sheet,Steel(PCM)')
                 print(remain_match)
-                pcm_count=pcm_count+1
             elif pcm_count==2:
-                pcm_count=match_number+0.2
+                pcm_match=match_number+pcm_count*0.1
                 match_list.at[match_number,"gerp_re"]=remain_seq
-                remain_match.at[pcm_count,"index"]=i
+                remain_match.at[pcm_match,"index"]=i
                 print('Sheet,Steel(PCM)')
                 print(remain_match)
-                pcm_count=pcm_count+1
-            elif pcm_exc==3:
-                pcm_count=match_number+0.3
+            elif pcm_count==3:
+                pcm_match=match_number+pcm_count*0.1
                 match_list.at[match_number,"gerp_exc"]=remain_seq
-                remain_match.at[pcm_count,"index"]=i
+                remain_match.at[pcm_match,"index"]=i
                 print('Sheet,Steel(PCM)')
                 print(remain_match)
-                pcm_count=pcm_count+1
             else:
                 pass
         
