@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 ###########################GERP###############################
-gerp=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/gerp.xlsx')
+gerp=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/gerp.xlsx')
 # #파일에 따라 추가하기
 # gerp=gerp[gerp['Model'].str.contains('F3')] #total 행 제거
 # gerp.reset_index(drop=True, inplace=True)
@@ -106,10 +106,10 @@ for i in range(len(empty_list)):
         else:
             pass
 
-gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/gerpresult.xlsx')
+gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/gerpresult.xlsx')
 
 ###########################NPT###############################
-npt=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/npt.xlsx')
+npt=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/npt.xlsx')
 
 # #파일에 따라 추가하기 (Test-1 O, Test-3 X)
 npt=npt.drop([0],axis=0) #total 행 제거
@@ -318,7 +318,7 @@ for i in range(len(empty_list)):
 npt=npt[npt['Supply Type']=='Assembly Pull']
 npt.reset_index(inplace=True,drop=True)
 
-npt.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/nptresult.xlsx')
+npt.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/nptresult.xlsx')
 
 ####################### compare npt and gerp #######################
 #Match with GERP parent
@@ -1159,7 +1159,7 @@ else:
 match_list.reset_index(drop=True, inplace=True)
 
 #매칭 안되고 missing 된것
-remain_gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/remaingerp.xlsx')
+remain_gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/remaingerp.xlsx')
 
 #gerp_re할때 순서 바꾼 것 다시 원상 복귀, 매칭 리스트 파일 위해 인덱스 재정렬
 match_list.reset_index(inplace=True, drop=True)
@@ -1169,7 +1169,7 @@ match_list['count']=match_list.count(axis = 1)-1
 match_list=match_list.rename(columns = {'index':'Seq.'})
 
 #save file
-match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/matchlist.xlsx')
+match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchlist.xlsx')
 
 #matchlist에서 substitute part가 있는 애들은 칼럼 두개 만들기
 sub_match_list=pd.DataFrame()
@@ -1817,7 +1817,7 @@ for i in range(len(match_list)):
         change_count=change_count+1    
     
 #save file
-sub_match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/submatchlist.xlsx')
+sub_match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/submatchlist.xlsx')
 
 #아무것도 해당안되는 애들 뽑아서 sub_match_list에 넣기
 match_join = pd.merge(npt['Seq.'], sub_match_list, on ='Seq.', how ='left')
@@ -1867,7 +1867,7 @@ for i in range(len(match_join)):
             print("gerp_price, gerp_parent only - Error") #gerp_price, gerp_parent 이외에 다른 게 count2를 만듬
 
 #save file
-match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/matchjoin.xlsx')
+match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchjoin.xlsx')
 
 #final table
 final_table=pd.DataFrame()
@@ -1980,7 +1980,7 @@ for i in range(len(match_join)):
 
 
 #MTL column
-mtl=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/gerp.xlsx',sheet_name='MTL Cost')
+mtl=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/gerp.xlsx',sheet_name='MTL Cost')
 mtl=mtl[['Item No','Item Cost','Material Overhead Cost','Creation Period']]
 #mtl 부분 데이터 정리
 mtl=mtl.rename(columns={'Item No':'Child Item','Creation Period':'PAC Creation','Item Cost':'MTL Cost','Material Overhead Cost':'MTL OH'})
@@ -2145,4 +2145,4 @@ for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
         final_table.at[i,"Material Cost (LOC)"]=np.nan
 
 
-final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0215/FL/final_table.xlsx')
+final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/final_table.xlsx')
