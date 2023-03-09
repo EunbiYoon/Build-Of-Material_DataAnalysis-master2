@@ -886,7 +886,7 @@ for i in range(len(remain_gerp)): #i -> gerp
         match_number=npt.at[j,"Seq."]
         
         ############### coil,sheet(sts) ###############
-        if remain_des=='Coil,Steel(STS)' and npt_des=='Sheet,Steel(STS)':
+        if remain_des=='Coil,Steel(STS)' and npt_des==remain_des:
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
 
@@ -897,7 +897,7 @@ for i in range(len(remain_gerp)): #i -> gerp
 
         ############## 'Sheet,Steel(GI)' ###############
         elif remain_des=='Sheet,Steel(GI)' and npt_des==remain_des: 
-            match_list.at[match_number,"gerp_sub"]=remain_seq
+            match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
 
         
@@ -945,7 +945,8 @@ for i in range(len(remain_gerp)): #i -> gerp
             #remian_gerp_duplicate-bug
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[match_number,"index"]=i
-    
+
+
         ############## PASS ###############
         else:
             pass
@@ -1124,6 +1125,27 @@ for i in range(len(match_list)):
         sub_matchlist.at[change_count,"count"]=1 #final table false column
         change_count=change_count+1
 
+    ############### exc, price, re ###############
+    elif match_digit==101001:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
+        #exc
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
+        #re
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_re"]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
+
     ############### parent, re, sub, exc ###############
     elif match_digit==11011:
         #parent
@@ -1148,7 +1170,8 @@ for i in range(len(match_list)):
         change_count=change_count+1
     
     else:
-        print("[ERROR] match digit another login found - check index: "+str(i)+" columns")
+        print("[ERROR] match digit another login found - check match_digit: "+str(match_digit))
+        print(match_digit)
 
 
 # match=False -> count=0 matching
@@ -1244,35 +1267,41 @@ mtl=mtl[['mtl start','Child Item','PAC Creation','MTL Cost','Net Material','MTL 
 mtl_final=pd.merge(final_table, mtl, on='Child Item', how='left')
 final_table = mtl_final.sort_values(by=['Seq.'],ascending=True)
 
+
+
 ####################### Price Match ####################
-#price match column 채우기
+# price match - general 
 final_table["price match"]=(final_table['Net Material']-final_table['Unit Price (USD)'])*final_table['Qty Per Assembly']
 cast_to_type = {'price match': float} # round error -> datatype
 final_table = final_table.astype(cast_to_type) # round error -> datatype
 final_table["price match"]=final_table["price match"].round(8)
 
-######### start from here 3/9
-######################## Match Type : Price Change / True/ Substitute ########################
-#price change -> True 
+# upper balance, lower balance  
+final_table["index"]=final_table.index
+for i in range(len(final_table)):
+    npt_part=final_table.at[i,"Part No"]
+    gerp_part=final_table.at[i,"Child Item"]
+    npt_des=final_table.at[i,"Desc."]
+    final_match=final_table.at[i,"match"]
+    if npt_des[:13]=='Cover,Balance' and npt_part!=gerp_part:
+        npt_seq=final_table.at[i,"Seq."]+1
+        resin_cost=final_table.loc[final_table['Seq.'] == npt_seq, "Material Cost (LOC)"].values
+        final_table.at[i,"price match"]=(final_table.at[i,"Net Material"]-resin_cost)*final_table.at[i,"Qty Per Assembly"]
+
+
+######################## Match Type : Price Change / True / Substitute ########################
+############ True, Price Change
 for i in range(len(final_table)):
     price_match=round(final_table.at[i,'price match'],2)
     final_match=final_table.at[i,"match"]
-    ######### True 
-    if final_match==False:
-        if price_match==0 or price_match==0.00 or str(price_match)=='nan': 
+    if final_match!=False:
+        if abs(price_match)<0.001 or str(price_match)=='nan': 
             final_table.at[i,'match']=True
-    else:
-        final_table.at[i,"match"]=False
-
-#substitute~~ ->Substitute, price~~~ -> Price Change
-for i in range(len(final_table)):
-    final_match=str(final_table.at[i,"match"])
-    if final_match.__contains__('Substitute'):
-        final_table.at[i,"match"]="Substitute"
-    elif final_match.__contains__('price'):
-        final_table.at[i,"match"]="Price Change"
+        else:
+            final_table.at[i,'match']="Price Change"
                     
-# Wihtin True, Price Change, part number not matching -> substitute 
+######################## Match Type : Substitute / True ########################
+############ Substitute
 for i in range(len(final_table)):
     final_match=str(final_table.at[i,"match"])
     npt_part=str(final_table.at[i,"Part No"])
@@ -1280,7 +1309,6 @@ for i in range(len(final_table)):
     if gerp_part!='':
         if npt_part!=gerp_part:
             final_table.at[i,"match"]="Substitute"
-
 
 ######################## Total Price Calculation ########################
 #price table -> final result
@@ -1306,6 +1334,7 @@ for i in range(len(final_table)):
 final_table['Price Change']=round(final_table['Price Change'],2)
 final_table['Substitute Price Change']=round(final_table['Substitute Price Change'],2)
 
+final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
 ######################## NPT Matching with several GERP -> NPT Empty ########################
 for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
     npt_seq1=final_table.at[i,"Seq."]
@@ -1327,4 +1356,4 @@ for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
         final_table.at[i,"Material Cost (LOC)"]=np.nan
 
 
-final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
+# final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
