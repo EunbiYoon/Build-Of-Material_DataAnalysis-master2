@@ -1334,7 +1334,7 @@ for i in range(len(final_table)):
 final_table['Price Change']=round(final_table['Price Change'],2)
 final_table['Substitute Price Change']=round(final_table['Substitute Price Change'],2)
 
-final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
+
 ######################## NPT Matching with several GERP -> NPT Empty ########################
 for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
     npt_seq1=final_table.at[i,"Seq."]
@@ -1356,4 +1356,4 @@ for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
         final_table.at[i,"Material Cost (LOC)"]=np.nan
 
 
-# final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
+final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')

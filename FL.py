@@ -1978,7 +1978,6 @@ for i in range(len(match_join)):
         #나중에 채울 price match
         final_table.at[i,"price match"]=''
 
-final_table.to_excel('33.xlsx')
 print(final_table)
 
 #MTL column
