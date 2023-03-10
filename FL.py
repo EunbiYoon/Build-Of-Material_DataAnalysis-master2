@@ -826,7 +826,7 @@ sub_matchlist=match_list
 all_columns=set(["gerp_price","gerp_sub","gerp_exc","gerp_true","gerp_parent","gerp_re","index"])
 submatchlist_columns=set(sub_matchlist.columns.tolist())
 exclude_list=pd.DataFrame(all_columns.difference(submatchlist_columns))
-print(exclude_list)
+
 for i in range(len(sub_matchlist)):
     match_list.at[i,"match_digit"]=0
     for j in range(len(exclude_list)):
@@ -852,7 +852,6 @@ for i in range(len(match_list)):
 ####### columns not all contain -> column delete #######
 match_list=match_list.drop(exclude_list[0].values.tolist(),axis=1)
 match_list=match_list.rename(columns={"index": "Seq."})
-print(match_list)
 
 match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchlist.xlsx')
 
@@ -918,7 +917,7 @@ for i in range(len(match_list)):
         change_count=change_count+1
     
     ############### sub, price,exc ###############
-    elif match_digit==110000:
+    elif match_digit==111000:
         #price
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
@@ -1132,6 +1131,17 @@ mtl=mtl[['mtl start','Child Item','PAC Creation','MTL Cost','Net Material','MTL 
 mtl_final=pd.merge(final_table, mtl, on='Child Item', how='left')
 final_table = mtl_final.sort_values(by=['Seq.'],ascending=True)
 
+
+######################## Match Type : Substitute / True ########################
+############ Substitute
+for i in range(len(final_table)):
+    final_match=str(final_table.at[i,"match"])
+    npt_part=str(final_table.at[i,"Part No"])
+    gerp_part=str(final_table.at[i,"Child Item"])
+    if gerp_part!='':
+        if npt_part!=gerp_part:
+            final_table.at[i,"match"]="Substitute"
+
 ############################ Price Match #########################
 ############## price match - general ##############
 final_table["price match"]=(final_table['Net Material']-final_table['Unit Price (USD)'])*final_table['Qty Per Assembly']
@@ -1168,7 +1178,7 @@ for i in range(len(final_table)):
     child_part=str(final_table.at[i,"Child Item"])[:-2]  #gerp
     part_des=final_table.at[i,"Desc."] #npt
     part_match=final_table.at[i,"match"]
-    if part_des.__contains__('Tub,Drum(') and part_match.__contains__('Substitute'):
+    if part_des.__contains__('Tub,Drum(') and str(part_match)=='Substitute':
         for j in range(len(final_table)):
             another_parent=final_table.at[j,"Parent Part"][:-2]#npt
             another_qty=final_table.at[j,"Qty Per Assembly"]
@@ -1177,7 +1187,7 @@ for i in range(len(final_table)):
             another_match=final_table.at[j,"match"]
             if another_des=='Coil,Steel(STS)' and another_parent==child_part and another_match.__contains__("Substitute")==False:
                 final_table.at[i,"price match"]=(final_table.at[i,"Net Material"]-another_price)*final_table.at[i,"Qty Per Assembly"]
-    elif part_des.__contains__('Cover,Rear') and part_match.__contains__('Substitute'):
+    elif part_des.__contains__('Cover,Rear') and str(part_match)=='Substitute':
         for j in range(len(final_table)):
             another_parent=final_table.at[j,"Parent Part"][:-2]
             another_qty=final_table.at[j,"Qty Per Assembly"]
@@ -1195,7 +1205,7 @@ for i in range(len(final_table)):
     gerp1_child=final_table.at[i,"Child Item"]
     gerp1_des=final_table.at[i,"Description"]
     gerp1_match=final_table.at[i,"match"]
-    if gerp1_des.__contains__('Cover,Rear') and gerp1_match.__contains__('Substitute'):
+    if gerp1_des.__contains__('Cover,Rear') and str(gerp1_match)=='Substitute':
         for j in range(len(final_table)):
             gerp2_parent=final_table.at[j,"Parent Item"]
             gerp2_des=final_table.at[j,"Description"]
@@ -1211,21 +1221,12 @@ for i in range(len(final_table)):
 for i in range(len(final_table)):
     price_match=round(final_table.at[i,'price match'],2)
     final_match=final_table.at[i,"match"]
-    if final_match!=False:
+    if final_match==True:
         if abs(price_match)<0.001 or str(price_match)=='nan': 
             final_table.at[i,'match']=True
         else:
             final_table.at[i,'match']="Price Change"
-                    
-######################## Match Type : Substitute / True ########################
-############ Substitute
-for i in range(len(final_table)):
-    final_match=str(final_table.at[i,"match"])
-    npt_part=str(final_table.at[i,"Part No"])
-    gerp_part=str(final_table.at[i,"Child Item"])
-    if gerp_part!='':
-        if npt_part!=gerp_part:
-            final_table.at[i,"match"]="Substitute"
+
 
 ######################## Total Price Calculation ########################
 #price table -> final result
