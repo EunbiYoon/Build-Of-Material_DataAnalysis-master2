@@ -987,8 +987,16 @@ remain_gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/remaing
 # add match_digit column 
 sub_matchlist=match_list
 
+####### columns not all contain #######
+all_columns=set(["gerp_price","gerp_sub","gerp_exc","gerp_true","gerp_parent","gerp_re","index"])
+submatchlist_columns=set(sub_matchlist.columns.tolist())
+exclude_list=pd.DataFrame(all_columns.difference(submatchlist_columns))
+
 for i in range(len(sub_matchlist)):
     match_list.at[i,"match_digit"]=0
+    for j in range(len(exclude_list)):
+        exclude_column=exclude_list.at[j,0]
+        match_list.at[i,exclude_column]=0
 
 # add one more column
 for i in range(len(match_list)):

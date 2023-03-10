@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from collections import Counter
 
 ###########################GERP###############################
 gerp=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/gerp.xlsx')
@@ -336,7 +337,7 @@ match_list=pd.DataFrame()
 unique_gerp=gerp
 model_name=gerp.at[0,"Parent Item"][:1]
 
-#Screw,Tapping / Screw,Taptite / Duct / Packing / Resin,EPS / Damper 우선 배치 혼돈을 줄수 있음
+####################################### priority - Screw, tapping #######################################
 for i in range(len(npt)):
     npt_part=npt.at[i,"Part No"]
     npt_parent=npt.at[i,"Parent Part"]
@@ -345,7 +346,7 @@ for i in range(len(npt)):
     npt_qty=npt.at[i,"Unit Qty"]
     match_number=npt.at[i,"Seq."]
     if npt_des=="Screw,Tapping": #Screw,tapping 
-        if model_name=='T' or 'F': #Screw,tapping -> TL,FL
+        if model_name=='T' or 'F': #Screw,tapping 
             for j in range(len(unique_gerp)): #duplicate 제외
                 gerp_part=unique_gerp.at[j,"Child Item"]
                 gerp_des=unique_gerp.at[j,"Description"]
@@ -365,7 +366,7 @@ for i in range(len(npt)):
             unique_gerp=unique_gerp.drop(used_index,axis=0)
             unique_gerp.reset_index(drop=True, inplace=True)
 
-        elif model_name=='R': #Screw,tapping -> TL,FL
+        elif model_name=='R': #Screw,tapping 
             for j in range(len(unique_gerp)): #duplicate 제외
                 gerp_parent=unique_gerp.at[j,"Parent Item"]
                 gerp_part=unique_gerp.at[j,"Child Item"]
@@ -388,98 +389,7 @@ for i in range(len(npt)):
         else:
             print("Unidentified Model")
     
-
-
-    #Screw,Taptite -> DR
-    elif npt_des=='Screw,Taptite':
-        for j in range(len(unique_gerp)): #duplicate 제외
-            gerp_part=unique_gerp.at[j,"Child Item"]
-            gerp_des=unique_gerp.at[j,"Description"]
-            gerp_price=unique_gerp.at[j,"QPA*Material Cost"]
-            gerp_qty=unique_gerp.at[j,"Qty Per Assembly"]
-            if gerp_des==npt_des and gerp_part==npt_part and gerp_qty==npt_qty: #완전 일치문 (parent는 일치하지 않는 경우가 있어 제외)
-                if gerp_price==npt_price:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_true"]=gerp_data
-                else:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_price"]=gerp_data
-            else:
-                continue
-        ### HOW TO DROP 
-        used_index=unique_gerp[unique_gerp["Seq"]==gerp_data].index
-        unique_gerp=unique_gerp.drop(used_index,axis=0)
-        unique_gerp.reset_index(drop=True, inplace=True)
-
-    #Duct Assembly -> DR
-    elif npt_des=='Duct Assembly':
-        for j in range(len(unique_gerp)): #duplicate 제외
-            gerp_part=unique_gerp.at[j,"Child Item"]
-            gerp_sub_part=str(unique_gerp.at[j,"Child Item"])[:-1] # 끝자리 한자리까지 일치
-            gerp_des=unique_gerp.at[j,"Description"]
-            gerp_price=unique_gerp.at[j,"QPA*Material Cost"]
-            if npt_part.__contains__(gerp_sub_part): # 끝자리 한자리까지 일치
-                if gerp_part==npt_part: #완전일치
-                    if gerp_price==npt_price:
-                        gerp_data=unique_gerp.at[j,"Seq"]
-                        match_list.at[match_number,"gerp_true"]=gerp_data
-                    else:
-                        gerp_data=unique_gerp.at[j,"Seq"]
-                        match_list.at[match_number,"gerp_price"]=gerp_data
-                else:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_sub"]=gerp_data
-            else:
-                continue
-        ### HOW TO DROP 
-        used_index=unique_gerp[unique_gerp["Seq"]==gerp_data].index
-        unique_gerp=unique_gerp.drop(used_index,axis=0)
-        unique_gerp.reset_index(drop=True, inplace=True)
-
-    #Packing -> DR 
-    elif npt_des=='Packing':
-        for j in range(len(unique_gerp)):
-            gerp_parent=unique_gerp.at[j,"Parent Item"]
-            gerp_part=unique_gerp.at[j,"Child Item"]
-            gerp_des=unique_gerp.at[j,"Description"]
-            gerp_qty=unique_gerp.at[j,"Qty Per Assembly"]
-            if gerp_des==npt_des and gerp_part==npt_part: #부모랑 des일치하면 우선 배정, 파트넘버 전부 같음
-                if gerp_price==npt_price:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_true"]=gerp_data
-                else:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_price"]=gerp_data
-            else:
-                continue
-        ### HOW TO DROP 
-        used_index=unique_gerp[unique_gerp["Seq"]==gerp_data].index
-        unique_gerp=unique_gerp.drop(used_index,axis=0)
-        unique_gerp.reset_index(drop=True, inplace=True)
-
-    #Resin,EPS -> DR 
-    elif npt_des=='Resin,EPS':
-        for j in range(len(unique_gerp)):
-            gerp_parent=unique_gerp.at[j,"Parent Item"]
-            gerp_part=unique_gerp.at[j,"Child Item"]
-            gerp_des=unique_gerp.at[j,"Description"]
-            gerp_qty=unique_gerp.at[j,"Qty Per Assembly"]
-            if gerp_des==npt_des and gerp_part==npt_part and npt_parent==gerp_parent: #부모랑 des일치하면 우선 배정, 파트넘버 전부 같음
-                if gerp_price==npt_price:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_true"]=gerp_data
-                else:
-                    gerp_data=unique_gerp.at[j,"Seq"]
-                    match_list.at[match_number,"gerp_price"]=gerp_data
-            else:
-                continue
-        ### HOW TO DROP 
-        used_index=unique_gerp[unique_gerp["Seq"]==gerp_data].index
-        unique_gerp=unique_gerp.drop(used_index,axis=0)
-        unique_gerp.reset_index(drop=True, inplace=True)
-    else:
-        pass
-
+####################################### priority - Screw, customized #######################################
 #Screw,Customized -> 부모, description, Qty 만보고 먼저 매치
 for i in range(len(npt)):
     npt_part=npt.at[i,"Part No"]
@@ -510,7 +420,7 @@ for i in range(len(npt)):
         pass
 
 
-#Hanger,Upper -> 부모, description 만보고 먼저 매치
+####################################### priority - Upper Hanger & Door Glass#######################################
 sub_count=0
 count=0
 gerp_drop=pd.DataFrame()
@@ -587,7 +497,7 @@ else:
     unique_gerp.reset_index(drop=True, inplace=True)
 
 
-
+####################################### priority - Holder #######################################
 # Holder -> 파트넘버, des 보고 바로 매치
 for i in range(len(npt)):
     npt_parent=npt.at[i,"Parent Part"]
@@ -616,7 +526,7 @@ for i in range(len(npt)):
     unique_gerp=unique_gerp.drop(used_index,axis=0)
     unique_gerp.reset_index(drop=True, inplace=True)
 
-#일치 조건문 - 완전일치
+####################################### Arrange - Matching Perfectly #######################################
 for i in range(len(npt)):
     npt_part=npt.at[i,"Part No"]
     npt_des=npt.at[i,"Desc."]
@@ -642,7 +552,7 @@ for i in range(len(npt)):
     unique_gerp=unique_gerp.drop(used_index,axis=0)
     unique_gerp.reset_index(drop=True, inplace=True)
 
-
+####################################### Arrange - Matching Substitute #######################################
 #일치 조건문 - substitute   (part no 2자리 빼고 똑같은 것 ==> 둘다 parent와 description)
 for i in range(len(npt)):
     npt_part=str(npt.at[i,"Part No"])
@@ -664,7 +574,6 @@ for i in range(len(npt)):
     used_index=unique_gerp[unique_gerp["Seq"]==gerp_data].index
     unique_gerp=unique_gerp.drop(used_index,axis=0)
     unique_gerp.reset_index(drop=True, inplace=True)    
-
 
 #일치 조건문 - substitute   (part no 완전 다른 것 ==> 둘다 parent와 description)
 for i in range(len(npt)):
@@ -694,7 +603,7 @@ for i in range(len(npt)):
         unique_gerp=unique_gerp.drop(used_index,axis=0)
         unique_gerp.reset_index(drop=True, inplace=True)   
 
-
+####################################### Arrange - Matching except parent #######################################
 #일치 조건문 - parent 불일치
 for i in range(len(npt)):
     npt_part=npt.at[i,"Part No"]
@@ -717,7 +626,7 @@ for i in range(len(npt)):
     unique_gerp=unique_gerp.drop(used_index,axis=0)
     unique_gerp.reset_index(drop=True, inplace=True) 
 
-
+####################################### Arrange - Matching except parent #######################################
 ### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
 #price, parent -> parent는 드롭 -> unique_add
 match_list=match_list.reset_index()
@@ -749,246 +658,8 @@ else:
     #남은 것 다시 매칭하기 위해 행렬 정렬 -> 아래 조건문에서 자기 자리 찾아감
     match_list.index=match_list['index']
 
-
-### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
-match_list.index=match_list['index']
-
-#남은 것 다시 매칭--> Coil,Steel => substitue part인 경우
-match_list.index=match_list['gerp_price'] # gerp에서 부모가 같은 경우, Handle를 포함
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=remain_gerp.at[i,"Description"]
-    remain_parent=remain_gerp.at[i,"Parent Item"]
-    remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=="Coil,Steel(STS)":
-        for j in range(len(gerp)):
-            gerp_parent=gerp.at[j,"Parent Item"]
-            gerp_des=gerp.at[j,"Description"]
-            gerp_seq=gerp.at[j,"Seq"]
-            if gerp_des=="Sheet,Steel(STS)" and gerp_parent==remain_parent:
-                match_list.at[gerp_seq,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-        else:
-            pass
-
-match_list.reset_index(drop=True, inplace=True)
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-#남은 것 다시 매칭--> pulsator cover/steel sheet/duct
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=remain_gerp.at[i,"Description"]
-    remain_part=remain_gerp.at[i,"Child Item"][:-2]
-    remain_parent=remain_gerp.at[i,"Parent Item"]
-    remain_sub_parent=str(remain_gerp.at[i,"Parent Item"])[:-2]
-    for j in range(len(npt)):
-        #hanger pivot -> 2 gerp_parent
-        npt_des=npt.at[j,"Desc."]
-        npt_part=str(npt.at[j,"Part No"])[:-2]
-        npt_parent=str(npt.at[j,"Parent Part"])
-        #Match to npt-pulsator cover
-        if remain_des=='Cover,Pulsator':
-            if remain_des==npt_des and remain_part==npt_part:
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-        
-        #Match to npt-Coil,Steel(GI -> DR)
-        elif remain_des=='Coil,Steel(GI)':
-            if remain_parent==npt_parent and npt_des=='Sheet,Steel(GA)':
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            elif remain_part==npt_part and npt_des==remain_des:
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-
-        #Match to npt-sheet,Steel(GI -> DR)
-        elif remain_des=='Sheet,Steel(GI)':
-            if remain_parent==npt_parent and npt_des=='Coil,Steel(GI)':
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-        else:
-            pass
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
-#남은 것 다시 매칭--> resin,asa
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=remain_gerp.at[i,"Description"][:-2]
-    remain_part=remain_gerp.at[i,"Child Item"][:-2]
-    remain_parent=remain_gerp.at[i,"Parent Item"]
-    for j in range(len(npt)):
-        #hanger pivot -> 2 gerp_parent
-        npt_des=npt.at[j,"Desc."][:-2]
-        npt_part=str(npt.at[j,"Part No"])[:-2] #substitute로 같은 애도 인정
-        npt_parent=npt.at[j,"Parent Part"]
-        if npt_des=='Resin,A' and npt_parent==remain_parent:
-            match_number=npt.at[j,"Seq."]
-            match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-            remain_match.at[count,"index"]=i
-            count=count+1
-        else:
-            pass
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
-#남은 것 다시 매칭--> coil,sheet(sts)
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=remain_gerp.at[i,"Description"]
-    for j in range(len(npt)):
-        #hanger pivot -> 2 gerp_parent
-        npt_des=npt.at[j,"Desc."]
-        if npt_des=='Sheet,Steel(STS)' and remain_des=='Coil,Steel(STS)':
-            match_number=npt.at[j,"Seq."]
-            match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-            remain_match.at[count,"index"]=i
-            count=count+1
-        else:
-            pass
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
-#남은 것 다시 매칭--> stator, rotor combined
-remain_match=pd.DataFrame()
-match_list.index=match_list['index']
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    #stator, rotor combined
-    remain_des=remain_gerp.at[i,"Description"]
-    if remain_des.__contains__('Assembly,Combined'):
-        for j in range(len(npt)): #j -> npt
-            npt_des=npt.at[j,"Desc."]
-            if remain_des.__contains__(npt_des):
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-    
-    #rotor assembly  -> FL
-    elif remain_des=='Rotor Assembly':
-        for j in range(len(npt)):
-            npt_des=npt.at[j,"Desc."]
-            if npt_des.__contains__('Rotor'):
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-
-    #stator assembly  -> FL
-    elif remain_des=='Stator Assembly':
-        for j in range(len(npt)):
-            npt_des=npt.at[j,"Desc."]
-            if npt_des.__contains__('Stator'):
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-
-    #나머지는 통과
-    else:
-        pass
-
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
-### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
-#남은 것 다시 매칭--> hanger pivot part => gerp_parent 값이 두개인 경우
-remain_match=pd.DataFrame()
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=remain_gerp.at[i,"Description"]
-    remain_part=remain_gerp.at[i,"Child Item"][:-2]
-    for j in range(len(npt)):
-        #hanger pivot -> 2 gerp_parent
-        npt_des=npt.at[j,"Desc."]
-        npt_part=str(npt.at[j,"Part No"])[:-2]
-        if remain_des.__contains__(',Pivot'):
-            if remain_des==npt_des and remain_part==npt_part:
-                match_number=npt.at[j,"Seq."]
-                match_list.at[match_number,"gerp_re"]=remain_gerp.at[i,"Seq"]
-                remain_match.at[count,"index"]=i
-                count=count+1
-            else:
-                pass
-        else:
-            pass
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    pass
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
+####################################### Arrange - remain gerp #######################################
+############################ 1) NPT Sequence -> parent #########################
 ### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
 #남은 것 다시 매칭--> handle assembly => gerp_parent 값이 두개인 경우
 match_list.index=match_list['gerp_parent'] # gerp에서 부모가 같은 경우, Handle를 포함
@@ -1016,8 +687,23 @@ for i in range(len(remain_gerp)): #i -> gerp
                 match_list.at[gerp_seq,"gerp_re"]=remain_gerp.at[i,"Seq"]
                 remain_match.at[count,"index"]=i
                 count=count+1
-        else:
-            pass
+
+
+    elif remain_des=='Door,Glass':
+        for k in range(len(gerp)):
+            gerp_parent=gerp.at[k,"Parent Item"]
+            gerp_des=gerp.at[k,"Description"]
+            gerp_seq=gerp.at[k,"Seq"]
+            if gerp_parent==remain_parent and gerp_des=='Door,Glass':
+                match_list.at[k,"gerp_re"]=remain_seq
+
+                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
+                remain_match.at[count,"index"]=i #remain_gerp list index
+                count=count+1
+    
+    else:
+        pass
+    
 match_list.reset_index(drop=True, inplace=True)
 #remain_match 존재 유무
 remain_match_count=len(remain_match)
@@ -1029,855 +715,322 @@ else:
     remain_gerp=remain_gerp.drop(A,axis=0)
     remain_gerp.reset_index(inplace=True, drop=True)
 
+### data reset for next matching
+match_list.reset_index(drop=True, inplace=True)
 
+
+############################ 2) NPT Sequence -> index #########################
 ### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
-#남은 것 다시 매칭--> door glass => gerp_parent 값이 두개인 경우
-match_list.index=match_list['gerp_parent'] # gerp_parent를 인덱스로 두고 포인팅 값이 표기
+match_list.index=match_list['index']
+
+#남은 것 다시 매칭--> Coil,Steel => substitue part인 경우
+match_list.index=match_list['gerp_price'] # gerp에서 부모가 같은 경우, Handle를 포함
 remain_match=pd.DataFrame()
 count=0
 for i in range(len(remain_gerp)): #i -> gerp
     remain_des=remain_gerp.at[i,"Description"]
     remain_parent=remain_gerp.at[i,"Parent Item"]
+    remain_subparent=remain_gerp.at[i,"Parent Item"]
     remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=='Door,Glass':
-        for k in range(len(gerp)):
-            gerp_parent=gerp.at[k,"Parent Item"]
-            gerp_des=gerp.at[k,"Description"]
-            gerp_seq=gerp.at[k,"Seq"]
-            if gerp_parent==remain_parent and gerp_des=='Door,Glass':
-                match_list.at[k,"gerp_re"]=remain_seq
+    remain_part=remain_gerp.at[i,"Child Item"]
+    remain_subpart=remain_gerp.at[i,"Child Item"][:-2]
+    remain_seq=remain_gerp.at[i,"Seq"]
 
-                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
-                remain_match.at[count,"index"]=i #remain_gerp list index
-                count=count+1
-        else:
-            pass
+    for j in range(len(gerp)):
+        npt_des=npt.at[j,"Desc."]
+        npt_subdes=npt.at[j,"Desc."][:-2]
+        npt_subpart=str(npt.at[j,"Part No"])[:-2]
+        npt_parent=str(npt.at[j,"Parent Part"])
+        match_number=npt.at[j,"Seq."]
+
+        ############### coil,sheet(sts) ###############
+        if remain_des=="Coil,Steel(STS)" and npt_des=="Sheet,Steel(STS)" and gerp_parent==remain_parent:
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+        ############### Coil,Steel(STS) for drum ###############
+        elif remain_des=="Coil,Steel(STS)" and npt_parent==remain_parent and npt_des==remain_des:
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+        ############### Sheet,Steel(STS) ###############
+        elif npt_des=='Sheet,Steel(STS)' and remain_des=='Coil,Steel(STS)':
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+        elif remain_des=="Sheet,Steel(GI)" and remain_subparent==npt_subpart and npt_des=='Cover,Rear':
+            match_list.at[match_number,"gerp_exc"]=remain_seq
+            remain_match.at[count,"index"]=i #remain_gerp list index
+            count=count+1
+
+        ############### resin,asa ###############
+        elif npt_subdes=='Resin,A' and npt_parent==remain_parent:
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+        ############### rotor & stator ###############
+        elif remain_des.__contains__('Assembly,Combined') and remain_des.__contains__(npt_des):
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+    
+        ############### rotor assembly ###############
+        elif remain_des=='Rotor Assembly' and npt_des.__contains__('Rotor'):
+            match_list.at[match_number,"gerp_exc"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+        ############### stator assembly ###############
+        elif remain_des=='Stator Assembly' and npt_des.__contains__('Stator'):
+            match_list.at[match_number,"gerp_exc"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+
+        ############### hanger pivot ###############
+        elif remain_des.__contains__(',Pivot') and remain_des==npt_des and remain_subpart==npt_subpart:
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+        
+        ############### label, barcode ###############
+        elif remain_des=="Label,Barcode" and npt_subpart==remain_subpart and npt_des==remain_des:
+            match_list.at[match_number,"gerp_re"]=remain_seq
+            remain_match.at[count,"index"]=i
+            count=count+1
+        
 #remain_match 존재 유무
 remain_match_count=len(remain_match)
 if remain_match_count==0:
-    match_list.reset_index(inplace=True, drop=True)
-    remain_gerp.reset_index(inplace=True, drop=True)
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-    match_list.reset_index(inplace=True, drop=True)
-
-### Remain gerp : Label,Barcode -> FL
-remain_match=pd.DataFrame()
-match_list.index=match_list["index"]
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=str(remain_gerp.at[i,"Description"])
-    remain_part=remain_gerp.at[i,"Child Item"][:-2]
-    remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=="Label,Barcode":
-        for j in range(len(gerp)):
-            npt_part=str(npt.at[j,"Part No"])[:-2]
-            npt_seq=npt.at[j,"Seq."]
-            npt_des=npt.at[j,"Desc."]
-            if npt_part==remain_part and npt_des==remain_des:
-                match_list.at[npt_seq,"gerp_sub"]=remain_seq
-                match_list.at[npt_seq,"index"]=npt_seq
-                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
-                remain_match.at[count,"index"]=i #remain_gerp list index
-                count=count+1
-
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    remain_gerp.reset_index(inplace=True, drop=True)
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-#remain gerp drum
-remain_match=pd.DataFrame()
-match_list.index=match_list["index"]
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=str(remain_gerp.at[i,"Description"])
-    remain_parent=remain_gerp.at[i,"Parent Item"][:-2]
-    remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=="Coil,Steel(STS)":
-        for j in range(len(gerp)):
-            npt_parent=str(npt.at[j,"Parent Part"])[:-2]
-            npt_seq=npt.at[j,"Seq."]
-            npt_des=npt.at[j,"Desc."]
-            if npt_parent==remain_parent and npt_des==remain_des:
-                match_list.at[npt_seq,"gerp_sub"]=remain_seq
-                match_list.at[npt_seq,"index"]=npt_seq
-                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
-                remain_match.at[count,"index"]=i #remain_gerp list index
-                count=count+1
-
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    remain_gerp.reset_index(inplace=True, drop=True)
-else:
-    #matching 된 행은 제거 & 재정렬
-    A=remain_match["index"].tolist()
-    remain_gerp=remain_gerp.drop(A,axis=0)
-    remain_gerp.reset_index(inplace=True, drop=True)
-
-
-#remain gerp rear cover 
-remain_match=pd.DataFrame()
-match_list.index=match_list["index"]
-count=0
-for i in range(len(remain_gerp)): #i -> gerp
-    remain_des=str(remain_gerp.at[i,"Description"])
-    remain_parent=remain_gerp.at[i,"Parent Item"][:-2]
-    remain_seq=remain_gerp.at[i,"Seq"]
-    if remain_des=="Sheet,Steel(GI)":
-        for j in range(len(gerp)):
-            npt_child=str(npt.at[j,"Part No"])[:-2]
-            npt_seq=npt.at[j,"Seq."]
-            npt_des=npt.at[j,"Desc."]
-            if remain_parent==npt_child and npt_des=='Cover,Rear':
-                match_list.at[npt_seq,"gerp_exc"]=remain_seq
-                match_list.at[npt_seq,"index"]=npt_seq
-                # 빈 데이터 프레임에 값 저장 -> to drop on the remain_gerp list
-                remain_match.at[count,"index"]=i #remain_gerp list index
-                count=count+1
-
-#remain_match 존재 유무
-remain_match_count=len(remain_match)
-if remain_match_count==0:
-    remain_gerp.reset_index(inplace=True, drop=True)
+    pass
 else:
     #matching 된 행은 제거 & 재정렬
     A=remain_match["index"].tolist()
     remain_gerp=remain_gerp.drop(A,axis=0)
     remain_gerp.reset_index(inplace=True, drop=True)
 
-#reset index of match_list to save final file
+### data reset for next matching
 match_list.reset_index(drop=True, inplace=True)
 
-#매칭 안되고 missing 된것
+############### remain gerp 매칭 안되고 missing 된것
 remain_gerp.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/remaingerp.xlsx')
 
-#gerp_re할때 순서 바꾼 것 다시 원상 복귀, 매칭 리스트 파일 위해 인덱스 재정렬
-match_list.reset_index(inplace=True, drop=True)
+####################################### match_list "match_digit" #######################################
+sub_matchlist=match_list
 
-#matchlist에서 count만들기
-match_list['count']=match_list.count(axis = 1)-1
-match_list=match_list.rename(columns = {'index':'Seq.'})
+####### columns not all contain #######
+all_columns=set(["gerp_price","gerp_sub","gerp_exc","gerp_true","gerp_parent","gerp_re","index"])
+submatchlist_columns=set(sub_matchlist.columns.tolist())
+exclude_list=pd.DataFrame(all_columns.difference(submatchlist_columns))
+print(exclude_list)
+for i in range(len(sub_matchlist)):
+    match_list.at[i,"match_digit"]=0
+    for j in range(len(exclude_list)):
+        exclude_column=exclude_list.at[j,0]
+        match_list.at[i,exclude_column]=0
 
-#save file
+# add one more column
+for i in range(len(match_list)):
+    exist_column=match_list.iloc[i]
+    if str(exist_column.gerp_price)!="nan":
+        match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+100000
+    if str(exist_column.gerp_sub)!="nan":
+        match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+10000
+    if str(exist_column.gerp_exc)!="nan":
+        match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+1000
+    if str(exist_column.gerp_true)!="nan":
+        match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+100
+    if str(exist_column.gerp_parent)!="nan":
+        match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+10
+    if str(exist_column.gerp_re)!="nan":
+        match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+1
+
 match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchlist.xlsx')
 
-#matchlist에서 substitute part가 있는 애들은 칼럼 두개 만들기
-sub_match_list=pd.DataFrame()
+
+######################################## submatchlist matching with match_digit
+sub_matchlist=pd.DataFrame()
 change_count=0
 
-#칼럼의 판별을 위해
-match_column=match_list.columns
-
-if match_column.__contains__('gerp_true'): #trueO
-    if match_column.__contains__('gerp_re'): #trueO reO
-        if match_column.__contains__('gerp_exc'): # trueO reO excO
-            true_exist=True
-            re_exist=True
-            exc_exist=True
-        else: # trueO reO excX
-            true_exist=True
-            re_exist=True
-            exc_exist=False
-
-    else: #trueO reX
-        if match_column.__contains__('gerp_exc'): # trueO reX excO
-            true_exist=True
-            re_exist=False
-            exc_exist=True
-        else: # trueO reX excX
-            true_exist=True
-            re_exist=False
-            exc_exist=False          
-else: #trueX
-    if match_column.__contains__('gerp_re'): # trueX reO
-        if match_column.__contains__('gerp_exc'): # trueX reO excO
-            true_exist=False
-            re_exist=True
-            exc_exist=True
-        else: # trueX reO excX
-            true_exist=False
-            re_exist=True
-            exc_exist=False
-    else: #trueX reX
-        if match_column.__contains__('gerp_exc'): #trueX reX excO
-            true_exist=False 
-            re_exist=False
-            exc_exist=True
-        else: #trueX reX excX
-            true_exist=False
-            re_exist=False
-            exc_exist=False
-
-
-#submatchlist
 for i in range(len(match_list)):
-    ##################################### gerp_re column exist
-    if re_exist==True: 
-        match_count=match_list.at[i,"count"]
-        sub_empty=str(match_list.at[i,"gerp_sub"])
-        price_empty=str(match_list.at[i,"gerp_price"])
-        parent_empty=str(match_list.at[i,"gerp_parent"])
-        #gerp_re exist or not
-        if re_exist==True:
-            re_empty=str(match_list.at[i,"gerp_re"])
-        else:
-            re_empty='nan'
+    match_digit=match_list.at[i,"match_digit"]
+    
+    ############### true ###############
+    if match_digit==100:
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_true']
+        sub_matchlist.at[change_count,"gerp_true"]=match_list.at[i,'gerp_true']
+        change_count=change_count+1
 
-        #gerp_exc column exist
-        if exc_exist==True:
-            exc_empty=str(match_list.at[i,"gerp_exc"])
-        else:
-            exc_empty='nan'
+    ############### price ###############
+    elif match_digit==100000:
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        change_count=change_count+1
 
-        #value
-        sub_part=match_list.at[i,"gerp_sub"]
-        price_part=match_list.at[i,"gerp_price"]
-        if exc_exist==True:
-            exc_part=match_list.at[i,"gerp_exc"]
-        else:
-            exc_part='nan'
+    ############### parent ###############
+    elif match_digit==10:
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_parent']
+        sub_matchlist.at[change_count,"gerp_parent"]=match_list.at[i,'gerp_parent']
+        change_count=change_count+1
 
-        ############################ sub value exist ==> 한칸 뒤로 뺄 필요 (sub 칼럼은 항상 존재)
-        if sub_empty!='nan': 
-            ######sub, price exist
-            if price_empty!='nan': 
-                #######sub, price, exc exist
-                if exc_empty!='nan':
-                    ##### exc exist, price exist, sub exist
-                    ### only price column
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=price_part # 채움
-                    sub_match_list.at[change_count,'gerp_sub']=np.nan # sub 제거 
-                    sub_match_list.at[change_count,'gerp_exc']=np.nan # exc 제거
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exist, price, sub exist -> 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
+    ############### parent, price ###############
+    elif match_digit==100010:
+        # price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        change_count=change_count+1
+        #parent
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_parent"]=match_list.at[i,'gerp_parent']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_parent']
+        change_count=change_count+1
 
-                    ### only sub column
-                    change_count=change_count+1 # 한칸뒤로
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price 제거
-                    sub_match_list.at[change_count,'gerp_sub']=sub_part # 채움
-                    sub_match_list.at[change_count,'gerp_exc']=np.nan # exc 제거 
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price, sub exist -> 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
+    ############### sub ###############
+    elif match_digit==10000:
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_sub"]=match_list.at[i,'gerp_sub']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
+        change_count=change_count+1
 
-                    ### only exc column 
-                    change_count=change_count+1 #한칸뒤로
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price제거
-                    sub_match_list.at[change_count,'gerp_sub']=np.nan # sub 제거
-                    sub_match_list.at[change_count,'gerp_exc']=exc_part #채움
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price, sub exist -> 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
-                
-                else:
-                #######sub, price exist
-                #### only price column
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=price_part #채움
-                    sub_match_list.at[change_count,'gerp_sub']=np.nan #sub제거
-                    if exc_empty!='nan':
-                        sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] #빔 예상 (조건문)
-                    else:
-                        pass
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan #sub exist, price exist -> parent 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
-                    
-                    #### only sub column 
-                    change_count=change_count+1
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price제거
-                    sub_match_list.at[change_count,'gerp_sub']=sub_part #채움
-                    if exc_empty!='nan':
-                        sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] #빔 예상 (조건문)
-                    else:
-                        pass
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan #sub exist, price exist -> parent 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
+    ############### sub, price ###############
+    elif match_digit==110000:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        change_count=change_count+1
+        #sub
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_sub"]=match_list.at[i,'gerp_sub']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
+        change_count=change_count+1
 
-            else: 
-                ##### sub exist, price existX, re existX
-                ### only sub column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                sub_match_list.at[change_count,"gerp_price"]=np.nan # 조건문에서 아닌 것 판명
-                sub_match_list.at[change_count,'gerp_sub']=sub_part #채움
-                sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] #빔 예상
-                sub_match_list.at[change_count,'gerp_parent']=np.nan #sub exist -> parent 필요 없음
-                sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
+    ############### sub, parent ###############
+    elif match_digit==10010:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_parent"]=match_list.at[i,'gerp_parent']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_parent']
+        change_count=change_count+1
+        #sub
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_sub"]=match_list.at[i,'gerp_sub']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
+        change_count=change_count+1
 
-        ##################### exc value exist ==> 한칸 뒤로 뺄 필요
-        elif exc_empty!='nan': 
-            #exc part, price part
-            price_part=match_list.at[i,"gerp_price"]
-            exc_part=match_list.at[i,"gerp_exc"]
-            ########### exc, price value exist
-            if price_empty!='nan': 
-                ########### exc, price value exist / sub value exist X 
-                if sub_empty=='nan':
-                    ### only price column
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=price_part #채움
-                    sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (조건문)
-                    sub_match_list.at[change_count,'gerp_exc']=np.nan #비움
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price exist -> 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
-                    
-                    ### only exc column 
-                    change_count=change_count+1
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price제거
-                    sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (조건문)
-                    sub_match_list.at[change_count,'gerp_exc']=exc_part # 채움
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price exist -> 필요 없음
-                    sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
-                else:
-                    print("Logic Error")
+    ############### re ###############
+    elif match_digit==1:
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_re"]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_re']
+        change_count=change_count+1
 
-            #re,parent,exc
-            elif re_empty!='nan':
-                ########### exc, price, re exist
-                ### only parent column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"] #빔 예상 (추측)
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (추측)
-                sub_match_list.at[change_count,'gerp_exc']=np.nan #비움
-                sub_match_list.at[change_count,'gerp_parent']=match_list.at[i,"gerp_parent"] #채움
-                sub_match_list.at[change_count,'gerp_re']=np.nan #비움
-                
-                ### only re column 
-                change_count=change_count+1
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=np.nan #비움
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_exc']=np.nan #비움
-                sub_match_list.at[change_count,'gerp_parent']=np.nan #비움
-                sub_match_list.at[change_count,'gerp_re']=match_list.at[i,"gerp_re"] #채움
+    ############### re, price ###############
+    elif match_digit==100001:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        change_count=change_count+1
+        #re
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_re"]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_re']
+        change_count=change_count+1
 
-                ### only exc column 
-                change_count=change_count+1
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=np.nan #비움
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] # 채움
-                sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price exist -> 필요 없음
-                sub_match_list.at[change_count,'gerp_re']=np.nan #비움
-            else: 
-                ########### exc exist
-                #only exc column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"] #빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상
-                sub_match_list.at[change_count,'gerp_exc']=exc_part #채움
-                sub_match_list.at[change_count,'gerp_parent']=np.nan # exc exist-> 필요 없음
-                sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
+    ############### exc ###############
+    elif match_digit==1000:
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
+        change_count=change_count+1
 
-        ##################### re value exist ==> 한칸 뒤로 뺄 필요
-        elif re_empty!='nan': 
-            #exc part, price part
-            price_part=str(match_list.at[i,"gerp_price"])
-            parent_part=str(match_list.at[i,"gerp_parent"])
-            re_part=str(match_list.at[i,"gerp_re"])
+    ############### exc, price ###############
+    elif match_digit==101000:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
+        #exc
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
 
-            #re, price 존재
-            if price_part!='nan':
-                ### only price column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=price_part #채움
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"]#빔 예상 (조건문)
-                if exc_empty!='nan':
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"]#빔 예상 (조건문)
-                else:
-                    pass
-                sub_match_list.at[change_count,'gerp_parent']=match_list.at[i,"gerp_parent"]#빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_re']=np.nan #비움
-                
-                ### only re column 
-                change_count=change_count+1
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=np.nan#비움
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"]#빔 예상 (조건문)
-                if exc_empty!='nan':
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"]#빔 예상 (조건문)
-                else:
-                    pass
-                sub_match_list.at[change_count,'gerp_parent']=match_list.at[i,"gerp_parent"]#빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_re']=re_part #채움
+    ############### exc, price, re ###############
+    elif match_digit==101001:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
+        #exc
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
+        #re
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_re"]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"count"]=1 #final table false column
+        change_count=change_count+1
 
-            #re,parent
-            elif parent_part!='nan':
-                ### only parent column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"]#빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"]#빔 예상 (조건문)
-                if exc_empty!='nan':
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"]#빔 예상 (조건문)
-                else:
-                    pass
-                sub_match_list.at[change_count,'gerp_parent']=parent_part #채움:
-                sub_match_list.at[change_count,'gerp_re']=np.nan #비움
-                
-                ### only re column 
-                change_count=change_count+1
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                # true column
-                if true_exist==True: # true exist
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true exist
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)")
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"]#빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"]#빔 예상 (조건문)
-                if exc_empty!='nan':
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"]#빔 예상 (조건문)
-                else:
-                    pass
-                sub_match_list.at[change_count,'gerp_parent']=np.nan #비움
-                sub_match_list.at[change_count,'gerp_re']=re_part #채움
-            else:
-                pass
-
-        else: 
-            ###################  sub empty and exc empty ==> 한칸 뒤로 뺄 필요 없음
-            if parent_empty!='nan' and price_empty!='nan':
-            #### price, parent 둘다 있는 경우 price 선택
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"]
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] # 빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] # 빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_parent']=np.nan #parent 버리기
-                sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
-
-            else: 
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"]
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"]
-                if exc_empty!='nan':
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"]
-                else:
-                    pass
-                sub_match_list.at[change_count,'gerp_parent']=match_list.at[i,"gerp_parent"]
-                sub_match_list.at[change_count,'gerp_re']=match_list.at[i,'gerp_re'] #빔 예상(조건문)
-
-        #사이클 돌리기 위해 +1 증가
+    ############### parent, re, sub, exc ###############
+    elif match_digit==11011:
+        #parent
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_parent"]=match_list.at[i,'gerp_parent']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_parent']
+        change_count=change_count+1
+        #sub
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_sub"]=match_list.at[i,'gerp_sub']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
+        change_count=change_count+1
+        #re
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_re"]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_re']
+        change_count=change_count+1
+        #exc
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
         change_count=change_count+1
     
-    
-    ##################################### gerp_re column exist X
     else:
-        ##################################### gerp_re exist X
-        match_count=match_list.at[i,"count"]
-        sub_empty=str(match_list.at[i,"gerp_sub"])
-        price_empty=str(match_list.at[i,"gerp_price"])
-        exc_empty=str(match_list.at[i,"gerp_exc"])
-        parent_empty=str(match_list.at[i,"gerp_parent"])
-
-        #value
-        sub_part=match_list.at[i,"gerp_sub"]
-        price_part=match_list.at[i,"gerp_price"]
-        exc_part=match_list.at[i,"gerp_exc"]
-
-        if sub_empty!='nan': 
-            ############################ sub exist ==> 한칸 뒤로 뺄 필요
-            ######sub, price exist
-            if price_empty!='nan': 
-                #######sub, price, exc exist
-                if exc_empty!='nan':
-                    ##### exc exist, price exist, sub exist
-                    ### only price column
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=price_part # 채움
-                    sub_match_list.at[change_count,'gerp_sub']=np.nan # sub 제거 
-                    sub_match_list.at[change_count,'gerp_exc']=np.nan # exc 제거
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exist, price, sub exist -> 필요 없음
-
-                    
-                    ### only sub column
-                    change_count=change_count+1 # 한칸뒤로
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price 제거
-                    sub_match_list.at[change_count,'gerp_sub']=sub_part # 채움
-                    sub_match_list.at[change_count,'gerp_exc']=np.nan # exc 제거 
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price, sub exist -> 필요 없음
+        print("[ERROR] match digit another login found - check match_digit: "+str(match_digit))
+        print(match_digit)
 
 
-                    ### only exc column 
-                    change_count=change_count+1 #한칸뒤로
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price제거
-                    sub_match_list.at[change_count,'gerp_sub']=np.nan # sub 제거
-                    sub_match_list.at[change_count,'gerp_exc']=exc_part #채움
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price, sub exist -> 필요 없음
-
-                else:
-                #######sub, price exist
-                #### only price column
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=price_part #채움
-                    sub_match_list.at[change_count,'gerp_sub']=np.nan #sub제거
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] #빔 예상 (조건문)
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan #sub exist, price exist -> parent 필요 없음
-
-                    
-                    #### only sub column 
-                    change_count=change_count+1
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price제거
-                    sub_match_list.at[change_count,'gerp_sub']=sub_part #채움
-                    sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] #빔 예상 (조건문)
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan #sub exist, price exist -> parent 필요 없음
-
-            else: 
-                ##### sub exist, price existX, re existX
-                ### only sub column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                sub_match_list.at[change_count,"gerp_price"]=np.nan # 조건문에서 아닌 것 판명
-                sub_match_list.at[change_count,'gerp_sub']=sub_part #채움
-                sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] #빔 예상
-                sub_match_list.at[change_count,'gerp_parent']=np.nan #sub exist -> parent 필요 없음
-
-
-        elif exc_empty!='nan': 
-            ##################### exc exist ==> 한칸 뒤로 뺄 필요
-            #exc part, price part
-            price_part=match_list.at[i,"gerp_price"]
-            exc_part=match_list.at[i,"gerp_exc"]
-            if price_empty!='nan': 
-                ########### exc exist, price exist
-                if sub_empty=='nan':
-                    ########### exc, price exist and sub exist X 
-                    ### only price column
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=price_part #채움
-                    sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (조건문)
-                    sub_match_list.at[change_count,'gerp_exc']=np.nan #비움
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price exist -> 필요 없음
-
-
-                    ### only exc column 
-                    change_count=change_count+1
-                    sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                    # true column
-                    if true_exist==True: # true exist
-                        sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                    elif true_exist==False: # true exist
-                        pass
-                    else:
-                        print("Except True column there is another column missing (price, sub, parent)")
-                    #other column
-                    sub_match_list.at[change_count,"gerp_price"]=np.nan # price제거
-                    sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상 (조건문)
-                    sub_match_list.at[change_count,'gerp_exc']=exc_part # 채움
-                    sub_match_list.at[change_count,'gerp_parent']=np.nan # exc, price exist -> 필요 없음
-                
-                else:
-                    print("no logic")
-
-
-            else: 
-                ########### exc exist
-                #only exc column
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"] #빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] #빔 예상
-                sub_match_list.at[change_count,'gerp_exc']=exc_part #채움
-                sub_match_list.at[change_count,'gerp_parent']=np.nan # exc exist-> 필요 없음
-
-        else: 
-            ###################  sub empty and exc empty ==> 한칸 뒤로 뺄 필요 없음
-            if parent_empty!='nan' and price_empty!='nan':
-            #### price, parent 둘다 있는 경우 price 선택
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                #other column
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"]
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"] # 빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"] # 빔 예상 (조건문)
-                sub_match_list.at[change_count,'gerp_parent']=np.nan #parent 버리기
-
-            else: 
-                sub_match_list.at[change_count,"Seq."]=match_list.at[i,"Seq."]
-                if true_exist==True: # true 존재O
-                    sub_match_list.at[change_count,"gerp_true"]=match_list.at[i,"gerp_true"]
-                elif true_exist==False: # true 존재X
-                    pass
-                else:
-                    print("Except True column there is another column missing (price, sub, parent)") 
-                sub_match_list.at[change_count,"gerp_price"]=match_list.at[i,"gerp_price"]
-                sub_match_list.at[change_count,'gerp_sub']=match_list.at[i,"gerp_sub"]
-                sub_match_list.at[change_count,'gerp_exc']=match_list.at[i,"gerp_exc"]
-                sub_match_list.at[change_count,'gerp_parent']=match_list.at[i,"gerp_parent"]
-
-        #사이클 돌리기 위해 +1 증가
-        change_count=change_count+1    
-    
-#save file
-sub_match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/submatchlist.xlsx')
-
-#아무것도 해당안되는 애들 뽑아서 sub_match_list에 넣기
-match_join = pd.merge(npt['Seq.'], sub_match_list, on ='Seq.', how ='left')
-
-#nan -> count
-match_join['count']=match_join.count(axis=1)-1
-#nan -> 0(더하기 위한)
-match_sum=match_join.fillna(0)
-#gerpSeq. create
-if true_exist==True: # true 존재O
-    if re_exist==True: #re 존재O
-        if exc_exist==True: #exc 존재O
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_true'])+pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_exc'])+pd.to_numeric(match_sum['gerp_parent'])+pd.to_numeric(match_sum['gerp_re'])
-        else:
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_true'])+pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_parent'])+pd.to_numeric(match_sum['gerp_re'])
-    else:
-        if exc_exist==True: #exc 존재O
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_true'])+pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_exc'])+pd.to_numeric(match_sum['gerp_parent'])
-        else:
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_true'])+pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_parent'])
-  
-
-else: 
-    if re_exist==True: #re 존재O
-        if exc_exist==True: #exc 존재O
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_exc'])+pd.to_numeric(match_sum['gerp_parent'])+pd.to_numeric(match_sum['gerp_re'])
-        else:
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_parent'])+pd.to_numeric(match_sum['gerp_re'])
-          
-    else: 
-        if exc_exist==True: #exc 존재O
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_exc'])+pd.to_numeric(match_sum['gerp_parent'])
-        else:
-            match_join['gerpSeq.']=pd.to_numeric(match_sum['gerp_price'])+pd.to_numeric(match_sum['gerp_sub'])+pd.to_numeric(match_sum['gerp_parent'])
-           
-
-#count=2전부1로 만들기
-for i in range(len(match_join)):
-    match_count=match_join.at[i,"count"]
-    match_price=match_join.at[i,"gerp_price"]
-    if match_count==2:
-        if match_price!=np.nan: #값이 있음
-            match_join.at[i,'gerpSeq.']=match_join.at[i,'gerpSeq.']-match_join.at[i,'gerp_parent']
-            match_join.at[i,'gerp_parent']=np.nan #''로 하면 카운트 됨
-            match_join.at[i,'count']=1 #''로 하면 카운트 됨
-        else:
-            print("gerp_price, gerp_parent only - Error") #gerp_price, gerp_parent 이외에 다른 게 count2를 만듬
+# match=False -> count=0 matching
+match_join = pd.merge(npt['Seq.'], sub_matchlist, on ='Seq.', how ='left')    
 
 #save file
-match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchjoin.xlsx')
+match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/matchjoin.xlsx')
 
+######################################### final table
 #final table
 final_table=pd.DataFrame()
 match_column=pd.DataFrame()
-for i in range(len(match_join)):
-    #substitute part npt delete
-    npt_seq=match_join.at[i,"Seq."]
-    gerp_seq=match_join.at[i,"gerpSeq."]
 
-    #NPT
+for i in range(len(match_join)):
+    ######################################### NPT #########################################
+    npt_seq=match_join.at[i,"Seq."]
     #sequence 일치 칼럼을 뽑아내고
     npt_column=npt[npt["Seq."]==npt_seq]
     npt_column.reset_index(inplace=True, drop=True) #index 넘버 상관 X하고 0으로 
@@ -1902,11 +1055,13 @@ for i in range(len(match_join)):
     final_table.at[i,"price match"]=''
     final_table.at[i,"gerp start"]=''
 
+    ######################################### GERP #########################################
     #GERP Matching
-    match_count=match_join.at[i,"count"]
+    gerp_seq=match_join.at[i,"gerpSeq."]
+    gerp_seq_exist=str(gerp_seq)
     match_sub=match_join.at[i,"gerp_sub"]
-    #GERP ==> Not Match
-    if match_count==0: #empty dataframe -> count0
+    #######################GERP Match False####################
+    if gerp_seq_exist=='nan': #empty dataframe -> count0
         final_table.at[i,"Seq"]=''
         final_table.at[i,"Level"]=''
         final_table.at[i,"Parent Item"]=''
@@ -1917,14 +1072,15 @@ for i in range(len(match_join)):
         final_table.at[i,"Material Cost"]=''
         final_table.at[i,"QPA*Material Cost"]=''
         #match -> not match
-        final_table.at[i,'match']="False"
+        final_table.at[i,'match']=False
         #나중에 채울 price match
         final_table.at[i,"price match"]=''
-    #GERP ==> Match
+    #######################GERP Match True,PriceChange,Substitute####################
     else:
-        #fill dataframe -> count1
+        #gerp information extract
         gerp_column=gerp[gerp["Seq"]==gerp_seq]
         gerp_column.reset_index(inplace=True, drop=True) #index 넘버 상관 X하고 0으로 
+        
         final_table.at[i,"Seq"]=gerp_seq
         final_table.at[i,"Level"]=int(str(gerp_column.at[0,"Level"])[-1:])
         final_table.at[i,"Parent Item"]=gerp_column.at[0,"Parent Item"]
@@ -1934,54 +1090,12 @@ for i in range(len(match_join)):
         final_table.at[i,"Qty Per Assembly"]=gerp_column.at[0,"Qty Per Assembly"]
         final_table.at[i,"Material Cost"]=gerp_column.at[0,"Material Cost"]
         final_table.at[i,"QPA*Material Cost"]=gerp_column.at[0,"QPA*Material Cost"]
-
-        #match_column
-        match_column=list(match_join.iloc[i].dropna(axis=0).drop(['Seq.','count','gerpSeq.']).index)
-        #price comparison
-        price_diff=round(final_table.at[i,"Material Cost (LOC)"]-final_table.at[i,"QPA*Material Cost"],8)
-        if match_column==['gerp_true']: #sorting column 이 True 이면
-                final_table.at[i,"match"]="True"
-        elif match_column==['gerp_price']:
-            if price_diff!=0:
-                final_table.at[i,"match"]="False price"
-            elif price_diff=='nan':
-                final_table.at[i,"match"]="False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-        
-        elif match_column==['gerp_sub']: # exc, sub =>  같게 match에 표시
-            if price_diff!=0:
-                final_table.at[i,"match"]="Substitute False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-        
-        elif match_column==['gerp_parent']:
-            if price_diff!=0:
-                final_table.at[i,"match"]="False parent price"
-            else:
-                final_table.at[i,"match"]="False parent"
-
-        elif match_column==['gerp_exc']: # exc, sub =>  같게 match에 표시
-            if price_diff!=0:
-                final_table.at[i,"match"]="Substitute False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-
-        elif match_column==['gerp_re']:
-            if price_diff!=0:
-                final_table.at[i,"match"]="Substitute False price"
-            else:
-                final_table.at[i,"match"]="Substitute"
-
-        else:
-            print("no logic error")
-        #나중에 채울 price match
+        final_table.at[i,"match"]=True
         final_table.at[i,"price match"]=''
 
-print(final_table)
 
-#MTL column
-mtl=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/gerp.xlsx',sheet_name='MTL Cost')
+#######################Add MTL Column####################
+mtl=pd.read_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/gerp.xlsx',sheet_name='MTL Cost')
 mtl=mtl[['Item No','Item Cost','Material Overhead Cost','Creation Period']]
 #mtl 부분 데이터 정리
 mtl=mtl.rename(columns={'Item No':'Child Item','Creation Period':'PAC Creation','Item Cost':'MTL Cost','Material Overhead Cost':'MTL OH'})
@@ -1996,16 +1110,15 @@ mtl=mtl[['mtl start','Child Item','PAC Creation','MTL Cost','Net Material','MTL 
 mtl_final=pd.merge(final_table, mtl, on='Child Item', how='left')
 final_table = mtl_final.sort_values(by=['Seq.'],ascending=True)
 
-#price match column 채우기
+############################ Price Match #########################
+############## price match - general ##############
 final_table["price match"]=(final_table['Net Material']-final_table['Unit Price (USD)'])*final_table['Qty Per Assembly']
 cast_to_type = {'price match': float} # round error -> datatype
 final_table = final_table.astype(cast_to_type) # round error -> datatype
 final_table["price match"]=final_table["price match"].round(8)
 
-
-#### price calculate exception 1 -> FL
-## 자신의  parent와 다른 child 매칭 
-#Coil, Steel(STS) / Sheet,Steel(GI) (자신의 부모가 Cover, Rear)
+############## Coil, Steel(STS) / Sheet,Steel(GI) ##############
+## 자신의 부모가 Cover, Rear, 자신의  parent와 다른 child 매칭 
 for i in range(len(final_table)):
     parent_part=final_table.at[i,"Parent Part"] #gerp
     part_des=final_table.at[i,"Desc."] #npt
@@ -2027,10 +1140,8 @@ for i in range(len(final_table)):
     else:
         pass
 
-
-#### price calculate exception 2 -> FL
+############## 1- Tub,Drum(Front), Tub,Drum(Center), Tub,Drum(Rear) ##############
 ## 자신의 child 다른 parent 매칭 but substitute part
-#Tub,Drum(Front), Tub,Drum(Center), Tub,Drum(Rear)
 for i in range(len(final_table)):
     child_part=str(final_table.at[i,"Child Item"])[:-2]  #gerp
     part_des=final_table.at[i,"Desc."] #npt
@@ -2056,9 +1167,8 @@ for i in range(len(final_table)):
     else:
         pass
 
-#### price calculate exception 3 -> FL (2/20)
+############## 2- Tub,Drum(Front), Tub,Drum(Center), Tub,Drum(Rear) ##############
 ## 자신의 child 다른 parent 매칭 but substitute part
-#Tub,Drum(Front), Tub,Drum(Center), Tub,Drum(Rear)
 for i in range(len(final_table)):
     gerp1_child=final_table.at[i,"Child Item"]
     gerp1_des=final_table.at[i,"Description"]
@@ -2074,25 +1184,19 @@ for i in range(len(final_table)):
     else:
         pass
 
-#price change -> True 
+######################## Match Type : Price Change / True / Substitute ########################
+############ True, Price Change
 for i in range(len(final_table)):
     price_match=round(final_table.at[i,'price match'],2)
     final_match=final_table.at[i,"match"]
-    if final_match!="False":
-        if price_match==0 or price_match==0.00 or str(price_match)=='nan': 
+    if final_match!=False:
+        if abs(price_match)<0.001 or str(price_match)=='nan': 
             final_table.at[i,'match']=True
-    else:
-        final_table.at[i,"match"]=False
-
-#substitute~~ ->Substitute, price~~~ -> Price Change
-for i in range(len(final_table)):
-    final_match=str(final_table.at[i,"match"])
-    if final_match.__contains__('Substitute'):
-        final_table.at[i,"match"]="Substitute"
-    elif final_match.__contains__('price'):
-        final_table.at[i,"match"]="Price Change"
+        else:
+            final_table.at[i,'match']="Price Change"
                     
-# Wihtin True, Price Change, part number not matching -> substitute 
+######################## Match Type : Substitute / True ########################
+############ Substitute
 for i in range(len(final_table)):
     final_match=str(final_table.at[i,"match"])
     npt_part=str(final_table.at[i,"Part No"])
@@ -2101,7 +1205,7 @@ for i in range(len(final_table)):
         if npt_part!=gerp_part:
             final_table.at[i,"match"]="Substitute"
 
-
+######################## Total Price Calculation ########################
 #price table -> final result
 final_table['final result']=''
 final_table.at[0,'Price Change']=0
@@ -2125,7 +1229,8 @@ for i in range(len(final_table)):
 final_table['Price Change']=round(final_table['Price Change'],2)
 final_table['Substitute Price Change']=round(final_table['Substitute Price Change'],2)
 
-#NPT에서 중복되는 항 제거 첫째항만 남기기 (일치와 substitute 경우)
+
+######################## NPT Matching with several GERP -> NPT Empty ########################
 for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
     npt_seq1=final_table.at[i,"Seq."]
     npt_seq2=final_table.at[i-1,"Seq."]
@@ -2146,4 +1251,4 @@ for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
         final_table.at[i,"Material Cost (LOC)"]=np.nan
 
 
-final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/final_table.xlsx')
+final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
