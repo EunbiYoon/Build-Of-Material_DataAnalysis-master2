@@ -723,10 +723,11 @@ match_list.reset_index(drop=True, inplace=True)
 ### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
 match_list.index=match_list['index']
 
-#남은 것 다시 매칭--> Coil,Steel => substitue part인 경우
-match_list.index=match_list['gerp_price'] # gerp에서 부모가 같은 경우, Handle를 포함
+#남은 것 다시 매칭-
+match_list.index=match_list['gerp_price'] 
 remain_match=pd.DataFrame()
 count=0
+print
 for i in range(len(remain_gerp)): #i -> gerp
     remain_des=remain_gerp.at[i,"Description"]
     remain_parent=remain_gerp.at[i,"Parent Item"]
@@ -755,15 +756,11 @@ for i in range(len(remain_gerp)): #i -> gerp
             remain_match.at[count,"index"]=i
             count=count+1
 
-        ############### Sheet,Steel(STS) ###############
-        elif npt_des=='Sheet,Steel(STS)' and remain_des=='Coil,Steel(STS)':
+        ############### Sheet,Steel(GI) ###############
+        elif remain_des=="Sheet,Steel(GI)" and npt_parent==remain_part and npt_des=='Cover,Rear':
+            print(remain_des)
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[count,"index"]=i
-            count=count+1
-
-        elif remain_des=="Sheet,Steel(GI)" and remain_subparent==npt_subpart and npt_des=='Cover,Rear':
-            match_list.at[match_number,"gerp_exc"]=remain_seq
-            remain_match.at[count,"index"]=i #remain_gerp list index
             count=count+1
 
         ############### resin,asa ###############
@@ -1042,7 +1039,7 @@ for i in range(len(match_list)):
 match_join = pd.merge(npt['Seq.'], sub_matchlist, on ='Seq.', how ='left')    
 
 #save file
-match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/matchjoin.xlsx')
+match_join.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchjoin.xlsx')
 
 ######################################### final table
 #final table
@@ -1274,4 +1271,4 @@ for i in range(1,len(final_table)): #0은 -1과 비교할 수 없음으로
         final_table.at[i,"Material Cost (LOC)"]=np.nan
 
 
-final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/final_table.xlsx')
+final_table.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/final_table.xlsx')
