@@ -1014,6 +1014,10 @@ for i in range(len(match_list)):
     if str(exist_column[5])!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+1
 
+####### columns not all contain -> column delete #######
+match_list=match_list.drop(exclude_list[0].values.tolist(),axis=1)
+print(match_list)
+
 match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/matchlist.xlsx')
 
 

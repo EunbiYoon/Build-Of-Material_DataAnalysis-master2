@@ -849,8 +849,11 @@ for i in range(len(match_list)):
     if str(exist_column.gerp_re)!="nan":
         match_list.at[i,"match_digit"]=match_list.at[i,"match_digit"]+1
 
-match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchlist.xlsx')
+####### columns not all contain -> column delete #######
+match_list=match_list.drop(exclude_list[0].values.tolist(),axis=1)
+print(match_list)
 
+match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/FL/matchlist.xlsx')
 
 ######################################## submatchlist matching with match_digit
 sub_matchlist=pd.DataFrame()
@@ -860,17 +863,10 @@ for i in range(len(match_list)):
     match_digit=match_list.at[i,"match_digit"]
     
     ############### true ###############
-    if match_digit==100:
+    if match_digit==100 or 111 or 100101 or 10101 or 1101 or 110101:
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_true']
         sub_matchlist.at[change_count,"gerp_true"]=match_list.at[i,'gerp_true']
-        change_count=change_count+1
-
-    ############### price ###############
-    elif match_digit==100000:
-        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
-        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
-        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
         change_count=change_count+1
 
     ############### parent ###############
