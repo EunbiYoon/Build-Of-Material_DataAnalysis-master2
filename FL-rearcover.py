@@ -718,20 +718,20 @@ else:
 ### data reset for next matching
 match_list.reset_index(drop=True, inplace=True)
 
-
+print("333")
+print(match_list)
 ############################ 2) NPT Sequence -> index #########################
 ### 매칭 안된 데이터 - 남는 데이터 가지고 다시 비교
 match_list.index=match_list['index']
 
-#남은 것 다시 매칭-
-match_list.index=match_list['gerp_price'] 
+#남은 것 다시 매칭
 remain_match=pd.DataFrame()
 count=0
 print
 for i in range(len(remain_gerp)): #i -> gerp
     remain_des=remain_gerp.at[i,"Description"]
     remain_parent=remain_gerp.at[i,"Parent Item"]
-    remain_subparent=remain_gerp.at[i,"Parent Item"]
+    remain_subparent=remain_gerp.at[i,"Parent Item"][:-2]
     remain_seq=remain_gerp.at[i,"Seq"]
     remain_part=remain_gerp.at[i,"Child Item"]
     remain_subpart=remain_gerp.at[i,"Child Item"][:-2]
@@ -740,6 +740,7 @@ for i in range(len(remain_gerp)): #i -> gerp
     for j in range(len(gerp)):
         npt_des=npt.at[j,"Desc."]
         npt_subdes=npt.at[j,"Desc."][:-2]
+        npt_part=npt.at[j,"Part No"]
         npt_subpart=str(npt.at[j,"Part No"])[:-2]
         npt_parent=str(npt.at[j,"Parent Part"])
         match_number=npt.at[j,"Seq."]
@@ -757,11 +758,12 @@ for i in range(len(remain_gerp)): #i -> gerp
             count=count+1
 
         ############### Sheet,Steel(GI) ###############
-        elif remain_des=="Sheet,Steel(GI)" and npt_parent==remain_part and npt_des=='Cover,Rear':
-            print(remain_des)
+        elif remain_des=="Sheet,Steel(GI)" and npt_des=='Cover,Rear':
+            print(match_number)
             match_list.at[match_number,"gerp_re"]=remain_seq
             remain_match.at[count,"index"]=i
             count=count+1
+            print(remain_gerp)
 
         ############### resin,asa ###############
         elif npt_subdes=='Resin,A' and npt_parent==remain_parent:
@@ -800,6 +802,7 @@ for i in range(len(remain_gerp)): #i -> gerp
             remain_match.at[count,"index"]=i
             count=count+1
         
+
 #remain_match 존재 유무
 remain_match_count=len(remain_match)
 if remain_match_count==0:
@@ -913,6 +916,24 @@ for i in range(len(match_list)):
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
         change_count=change_count+1
     
+    ############### sub, price,re ###############
+    elif match_digit==110001:
+        #price
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
+        change_count=change_count+1
+        #sub
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_sub"]=match_list.at[i,'gerp_sub']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
+        change_count=change_count+1
+        #re
+        sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
+        sub_matchlist.at[change_count,"gerp_re"]=match_list.at[i,'gerp_re']
+        sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_re']
+        change_count=change_count+1
+    
     ############### sub, price,exc ###############
     elif match_digit==111000:
         #price
@@ -925,7 +946,7 @@ for i in range(len(match_list)):
         sub_matchlist.at[change_count,"gerp_sub"]=match_list.at[i,'gerp_sub']
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_sub']
         change_count=change_count+1
-        #sub
+        #exc
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerp_exc"]=match_list.at[i,'gerp_exc']
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_exc']
