@@ -990,7 +990,7 @@ sub_matchlist=match_list
 all_columns=set(["gerp_price","gerp_sub","gerp_exc","gerp_true","gerp_parent","gerp_re","index"])
 submatchlist_columns=set(sub_matchlist.columns.tolist())
 exclude_list=pd.DataFrame(all_columns.difference(submatchlist_columns))
-print(exclude_list)
+
 for i in range(len(sub_matchlist)):
     match_list.at[i,"match_digit"]=0
     for j in range(len(exclude_list)):
@@ -1016,7 +1016,6 @@ for i in range(len(match_list)):
 ####### columns not all contain -> column delete #######
 match_list=match_list.drop(exclude_list[0].values.tolist(),axis=1)
 match_list=match_list.rename(columns={"index": "Seq."})
-print(match_list)
 
 match_list.to_excel('C:/Users/RnD Workstation/Documents/NPTGERP/0306/TL/matchlist.xlsx')
 
