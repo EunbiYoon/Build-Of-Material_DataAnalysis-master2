@@ -1035,7 +1035,7 @@ for i in range(len(match_list)):
         change_count=change_count+1
     
     ############### true ###############
-    if match_digit==100000:
+    elif match_digit==100000:
         sub_matchlist.at[change_count,"Seq."]=match_list.at[i,'Seq.']
         sub_matchlist.at[change_count,"gerpSeq."]=match_list.at[i,'gerp_price']
         sub_matchlist.at[change_count,"gerp_price"]=match_list.at[i,'gerp_price']
